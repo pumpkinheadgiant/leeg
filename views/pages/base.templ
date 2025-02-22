@@ -1,0 +1,57 @@
+package pages
+
+
+templ Base() {
+    <!DOCTYPE html>
+    <html>
+        <head>
+            <title>leeg</title>
+            <link rel="stylesheet" href="/public/styles.css"/>
+            <link rel="stylesheet" href="/public/leeg.css"/>
+
+            <link rel="stylesheet" href="https://unpkg.com/franken-wc@0.0.4/dist/css/stone.min.css"/>
+
+            <meta charset="UTF-8"/>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+            <script src="https://unpkg.com/htmx.org@1.9.12" integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2" crossorigin="anonymous"></script>
+            <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/response-targets.js"></script>
+            <script src="/public/uikit.min.js"></script>
+            <script src="/public/uikit-icons.min.js"></script>      
+        </head>
+        <body class="antialiased" hx-ext="response-targets">
+            <div id="page" class="pb-5 bg-gray-800">
+                { children... }
+                <div id="catalog-modal" class="uk-modal-full" uk-modal>
+                    <div class="uk-modal-dialog">
+                        <div class="uk-modal-body">
+                            <h2 id="modal-title" class="uk-modal-title">Catalog</h2>
+                             <button class="uk-modal-close" type="button">Close</button>
+                            <div id="catalog-content">
+                                <!-- Content will be dynamically loaded here -->
+                            </div>
+                            <button class="uk-modal-close" type="button">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <script>
+                document.addEventListener("htmx:afterRequest", function(evt) {
+                    console.log("wurm");
+
+                    let message = evt.detail.xhr.getResponseHeader('Leeg-Message');
+                    let status = evt.detail.xhr.getResponseHeader('Leeg-Status');
+                    if (message && status) {
+                        UIkit.notification({
+                            message: message,
+                            status: status,
+                            pos: 'top-center',
+                            timeout: 2000
+                        });
+                    }
+                    
+                });
+            </script>
+        </body>
+    </html>
+}
