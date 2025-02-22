@@ -2,6 +2,12 @@
 .absolute {
   position: absolute;
 }
+.block {
+  display: block;
+}
+.table {
+  display: table;
+}
 .bg-opacity-image::before {
   content: '';
   position: absolute;
