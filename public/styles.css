@@ -2,11 +2,30 @@
 .absolute {
   position: absolute;
 }
+.relative {
+  position: relative;
+}
+.static {
+  position: static;
+}
 .block {
   display: block;
 }
+.contents {
+  display: contents;
+}
+.inline {
+  display: inline;
+}
 .table {
   display: table;
+}
+.resize {
+  resize: both;
+}
+.antialiased {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 .bg-opacity-image::before {
   content: '';
