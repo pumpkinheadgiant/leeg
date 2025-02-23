@@ -15,3 +15,6 @@ mkdir -p views/css/
 ```
 
 go get github.com/a-h/templ
+
+
+<a href="https://www.flaticon.com/free-icons/letter-l" title="letter l icons">Letter l icons created by Hight Quality Icons - Flaticon</a>

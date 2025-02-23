@@ -1,0 +1,27 @@
+.white-text-shadow {
+    color: white;
+    text-shadow: 2px 2px 6px black,
+    0 0 1em black,
+    0 0 0.2em black;
+}
+
+.gold-text-shadow {
+    color: gold;
+    text-shadow: 2px 2px 6px black,
+    0 0 1em black,
+    0 0 0.2em black;
+}
+
+.black-text-shadow {
+    color: black;
+    text-shadow: 2px 2px 6px white,
+    0 0 1em lightcyan,
+    0 0 0.2em cyan;
+}
+
+.red-text-shadow {
+    color: red;
+    text-shadow: 2px 2px 6px white,
+    0 0 1em black,
+    0 0 0.2em gainsboro;
+}
