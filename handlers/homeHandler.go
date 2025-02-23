@@ -13,6 +13,11 @@ type HomeHandler struct {
 
 func (h HomeHandler) HandleGetHome(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	// fake commit
-	return Render(w, r.WithContext(ctx), pages.HomePage())
+
+	leegs, err := h.service.GetLeegs()
+	if err != nil {
+		return err
+	}
+
+	return Render(w, r.WithContext(ctx), pages.HomePage(leegs))
 }

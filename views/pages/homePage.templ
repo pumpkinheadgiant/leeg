@@ -1,9 +1,33 @@
 package pages
 
-templ HomePage() {
+import "phg.com/leeg/model"
+
+templ HomePage(leegs []model.Leeg) {
     @Base() {
-    <span class="flex flex-row">
-        <span class="flex flex-col pt-3 mx-auto text-xl">LEEG</span>
-    </span>
+        <span class="flex flex-row">
+            <span class="flex flex-col pt-3 mx-auto text-xl">LEEG</span>
+        </span>
+        <span class="flex flex-col">
+            <ul>
+                for _, leeg := range leegs {
+                    @LeegLink(leeg)
+                }
+            </ul>
+            <span class="flex flex-row">
+                <span data-uk-toggle="target: #new-leeg-form" class="border rounded border-gray-200 mx-auto">
+                    New Leeg...
+                </span>
+                <span id="new-leeg-form">
+                    blabha
+                </span>
+            </span>
+            
+        </span>
+        
+        
     }
+}
+
+templ LeegLink(leeg model.Leeg) {
+    <li class="bold"> {leeg.Name} </li>
 }
