@@ -6,6 +6,7 @@ bin/
 .idea/
 tmp/
 tailwindcss
+tailwindcss.exe
 /views/**/*.txt
 /views/**/*_templ.go
 data/leeg.db
