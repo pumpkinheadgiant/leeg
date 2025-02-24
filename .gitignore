@@ -1,4 +1,4 @@
-data/
+
 env.props
 cert/
 scratch**
@@ -9,7 +9,7 @@ tailwindcss
 tailwindcss.exe
 /views/**/*.txt
 /views/**/*_templ.go
-data/
+data/leeg.db
 
 
 .DS_Store

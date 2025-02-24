@@ -1,3 +1,6 @@
+go 1.23.6
+    https://go.dev/dl/go1.23.6.windows-amd64.msi
+    
 go install github.com/air-verse/air@latest
 go install github.com/a-h/templ/cmd/templ@latest
 
