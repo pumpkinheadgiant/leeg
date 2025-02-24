@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
 
 	"go.etcd.io/bbolt"
 	"phg.com/leeg/model"
@@ -130,11 +129,7 @@ func (b BBoltService) GetLeegs() ([]model.EntityRef, error) {
 					return err
 				}
 				leegs = append(leegs, leeg.AsRef())
-				slog.Info("afefedsfasdf")
-			} else {
-				slog.Info("adsfasdf")
 			}
-
 		}
 		return nil
 	})
