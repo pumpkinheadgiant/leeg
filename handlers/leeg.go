@@ -35,6 +35,10 @@ func (l *LeegApp) Init() error {
 	router.Handle("/*", publicHandler()) // Serve files under /public/
 
 	router.Get("/", Make(homeHandler.HandleGetHome))
+
+	leegHandler := LeegHandler{service: service}
+
+	router.Post("/leegs", Make(leegHandler.HandlePostLeeg))
 	l.router = router
 	return nil
 }

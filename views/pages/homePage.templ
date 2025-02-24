@@ -1,33 +1,30 @@
 package pages
 
-import "phg.com/leeg/model"
+import (
+    "phg.com/leeg/model"
+    "phg.com/leeg/views/components/forms"
+   
+)
 
-templ HomePage(leegs []model.Leeg) {
+templ HomePage(leegs []model.EntityRef) {
     @Base() {
         <span class="flex flex-row">
-            <span class="flex flex-col pt-3 mx-auto text-xl">LEEG</span>
+            <span class="flex flex-col pt-3 mx-auto text-4xl">LEEGs</span>
         </span>
-        <span class="flex flex-col">
-            <ul>
+        <span class="flex flex-col w-full mx-auto">
+            <ul id="leeg-list" class="mx-auto">
                 for _, leeg := range leegs {
                     @LeegLink(leeg)
                 }
             </ul>
-            <span class="flex flex-row">
-                <span data-uk-toggle="target: #new-leeg-form" class="border rounded border-gray-200 mx-auto">
-                    New Leeg...
-                </span>
-                <span id="new-leeg-form">
-                    blabha
-                </span>
+            <span data-uk-toggle="target: #new-leeg-form" class="border p-1 bg-white rounded border-gray-700 mx-auto">
+                New Leeg...
             </span>
-            
+            @forms.LeegForm(model.LeegCreateRequest{TeamDescriptor: "Team"}, map[string]string{}, true, false)
         </span>
-        
-        
     }
 }
 
-templ LeegLink(leeg model.Leeg) {
-    <li class="bold"> {leeg.Name} </li>
+templ LeegLink(leeg model.EntityRef) {
+    <li class="bold mx-auto my-2 cursor-pointer"> {leeg.Text} </li>
 }

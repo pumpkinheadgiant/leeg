@@ -9,8 +9,12 @@ type BBoltService struct {
 	Db *bbolt.DB
 }
 
-type LeegData interface {
-	GetLeegs() ([]model.Leeg, error)
+type LeegService interface {
+	GetLeegs() ([]model.EntityRef, error)
+	CreateLeeg(request model.LeegCreateRequest) (model.EntityRef, error)
 }
 
 const LeegsBucketKey = "leegs"
+const LeegDataKey = "leeg"
+const dataBucketKey = "data"
+const teamsBucketKey = "teems"

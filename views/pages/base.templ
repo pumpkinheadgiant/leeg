@@ -20,8 +20,8 @@ templ Base() {
             <link rel="icon" type="image/x-icon" href="/leeg.ico">
 
         </head>
-        <body class="antialiased">
-            <div id="page" class="pb-5 bg-gray-300">
+        <body class="antialiased" hx-ext="response-targets">
+            <div id="page" class="pb-5 bg-gray-100">
                 { children... }
             </div>
         </body>

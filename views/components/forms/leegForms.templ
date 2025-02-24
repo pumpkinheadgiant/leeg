@@ -1,0 +1,89 @@
+package forms
+
+import(
+    "fmt"
+    "phg.com/leeg/model"
+)
+
+templ LeegForm(values model.LeegCreateRequest, errors map[string]string, hidden bool, outOfBand bool) {
+    <form id="new-leeg-form" class="mx-auto mt-2 grid grid-cols-6"
+                hx-post={fmt.Sprintf("/leegs")}
+                hx-target="#leeg-list"
+                hx-swap="beforeend"
+                hx-target-4**="#new-leeg-form"
+        if hidden {
+            hidden
+        } 
+        if outOfBand {
+            hx-swap-oob="true"
+        }
+    >
+        <label for="name" class="col-span-3">Name</label>
+        @Input( InputProps{
+            Name: "name",
+            Value: values.Name,
+            Error: errors["name"],
+            Placeholder: "leeg name here",
+            Classes: "my-1 mx-auto",
+        })
+        <label for="teamDescriptor" class="col-span-3">Team Descriptor</label>
+        @Input( InputProps{
+            Name: "teamDescriptor",
+            Value: values.TeamDescriptor,
+            Error: errors["teamDescriptor"],
+            Placeholder: "Team",
+            Classes: "my-1",
+        })
+        <label for="teamCount" class="col-span-3"># of Teams</label>
+        @Input( InputProps{
+            Name: "teamCount",
+            Type: "number",
+            Value: fmt.Sprintf("%v", values.TeamCount),
+            Error: errors["teamCount"],
+            Placeholder: "# of teams",
+            Classes: "my-1",
+        })
+        <label for="roundCount" class="col-span-3"># of Rounds</label>
+        @Input( InputProps{
+            Name: "roundCount",
+            Type: "number",
+            Value: fmt.Sprintf("%v", values.RoundCount),
+            Error: errors["roundCount"],
+            Placeholder: "# of rounds",
+            Classes: "my-1",
+        })
+        <button class="col-span-6">Submit</button>
+    </form>
+}
+
+templ Input(props InputProps) {
+    if props.Error != "" {
+        <span class="col-span-3 flex flex-col">
+            <input type={ props.Type } 
+                if props.Step != "" {
+                    step={ props.Step }
+                }
+                name={ props.Name } placeholder={ props.Placeholder } value={ props.Value } class={fmt.Sprintf("!bg-white %v", props.Classes)}>
+            <div class="text-red-500 text-xs">
+                { props.Error }
+            </div>
+        </span>
+    } else {
+        <input type={ props.Type } 
+        if props.Step != "" {
+            step={ props.Step }
+        }
+        name={ props.Name } placeholder={ props.Placeholder } value={ props.Value } class={fmt.Sprintf("!bg-white col-span-3 %v", props.Classes)}>
+    }
+   
+}
+
+type InputProps struct {
+    Name string
+    Value string
+    Error string
+    Placeholder string
+    Type string
+    Classes string
+    Step string
+}

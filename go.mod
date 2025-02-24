@@ -8,6 +8,8 @@ require (
 	go.etcd.io/bbolt v1.4.0
 )
 
+require github.com/google/uuid v1.6.0 // indirect
+
 require (
 	github.com/joho/godotenv v1.5.1
 	golang.org/x/sys v0.29.0 // indirect
