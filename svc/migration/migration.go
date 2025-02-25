@@ -4,8 +4,9 @@ import (
 	"log/slog"
 	"strconv"
 
+	"leeg/svc"
+
 	"go.etcd.io/bbolt"
-	"phg.com/leeg/svc"
 )
 
 type Migrator struct{}

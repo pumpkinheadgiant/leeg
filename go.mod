@@ -1,4 +1,4 @@
-module phg.com/leeg
+module leeg
 
 go 1.23.6
 

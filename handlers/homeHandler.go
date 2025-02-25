@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	"phg.com/leeg/svc"
-	"phg.com/leeg/views/pages"
+	"leeg/svc"
+	"leeg/views/pages"
 )
 
 type HomeHandler struct {

@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"phg.com/leeg/model"
-	"phg.com/leeg/svc"
-	"phg.com/leeg/views/components/forms"
-	"phg.com/leeg/views/pages"
+	"leeg/model"
+	"leeg/svc"
+	"leeg/views/components/forms"
+	"leeg/views/pages"
 )
 
 type LeegHandler struct {

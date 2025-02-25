@@ -1,8 +1,9 @@
 package svc
 
 import (
+	"leeg/model"
+
 	"go.etcd.io/bbolt"
-	"phg.com/leeg/model"
 )
 
 type LeegData struct {

@@ -7,10 +7,11 @@ import (
 	"os"
 	"strings"
 
+	"leeg/svc"
+	"leeg/svc/migration"
+
 	"github.com/go-chi/chi"
 	"go.etcd.io/bbolt"
-	"phg.com/leeg/svc"
-	"phg.com/leeg/svc/migration"
 )
 
 const DATAFILE_KEY = "datafile"
