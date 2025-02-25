@@ -52,7 +52,7 @@ We'll run three processes from terminals. There is a `Makefile` that should work
 `make css`
 
 ##### Windows
-`tailwindcss -i views/css/app.css -o public/styles.css --watch`
+`./tailwindcss -i views/css/app.css -o public/styles.css --watch`
 
 This will start the `tailwindcss` application. You should see something like:
 ```
