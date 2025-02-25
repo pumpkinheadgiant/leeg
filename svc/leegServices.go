@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 
+	"leeg/model"
+
 	"go.etcd.io/bbolt"
-	"phg.com/leeg/model"
 )
 
 func (b BBoltService) DataForLeeg(tx *bbolt.Tx, id string) (LeegData, error) {

@@ -5,7 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/joho/godotenv"
-	"phg.com/leeg/handlers"
+	"leeg/handlers"
 )
 
 func main() {
