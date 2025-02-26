@@ -14,6 +14,20 @@ type LeegHandler struct {
 	service svc.LeegService
 }
 
+func (l LeegHandler) HandleGetLeeg(w http.ResponseWriter, r *http.Request) error {
+	leegID := r.PathValue("leegID")
+	if leegID == "" {
+		w.WriteHeader(http.StatusNotFound)
+		return hxRedirect(w, r, "/")
+	}
+	leeg, err := l.service.GetLeeg(leegID)
+	if err != nil {
+		return err
+	}
+
+	return Render(w, r, pages.LeegPage(leeg))
+}
+
 func (l LeegHandler) HandlePostLeeg(w http.ResponseWriter, r *http.Request) error {
 	err := r.ParseForm()
 	if err != nil {
@@ -58,5 +72,5 @@ func (l LeegHandler) HandlePostLeeg(w http.ResponseWriter, r *http.Request) erro
 	if err != nil {
 		return err
 	}
-	return Render(w, r, forms.LeegForm(model.LeegCreateRequest{TeamDescriptor: "Team"}, map[string]string{}, true, true))
+	return Render(w, r, forms.LeegForm(model.LeegCreateRequest{TeamDescriptor: "Team", TeamCount: 4, RoundCount: 3}, map[string]string{}, true, true))
 }

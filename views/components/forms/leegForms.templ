@@ -18,39 +18,39 @@ templ LeegForm(values model.LeegCreateRequest, errors map[string]string, hidden 
             hx-swap-oob="true"
         }
     >
-        <label for="name" class="col-span-3">Name</label>
+        <label for="name" class="col-span-3 ml-auto mr-3">Name</label>
         @Input( InputProps{
             Name: "name",
             Value: values.Name,
             Error: errors["name"],
             Placeholder: "leeg name here",
-            Classes: "my-1",
+            Classes: "my-1 mr-3",
         })
-        <label for="teamDescriptor" class="col-span-3">Team Descriptor</label>
+        <label for="teamDescriptor" class="col-span-3 ml-auto mr-3">Team Descriptor</label>
         @Input( InputProps{
             Name: "teamDescriptor",
             Value: values.TeamDescriptor,
             Error: errors["teamDescriptor"],
             Placeholder: "Team",
-            Classes: "my-1",
+            Classes: "my-1 mr-3",
         })
-        <label for="teamCount" class="col-span-3"># of Teams</label>
+        <label for="teamCount" class="col-span-3 ml-auto mr-3"># of Teams</label>
         @Input( InputProps{
             Name: "teamCount",
             Type: "number",
             Value: fmt.Sprintf("%v", values.TeamCount),
             Error: errors["teamCount"],
             Placeholder: "# of teams",
-            Classes: "my-1",
+            Classes: "my-1 mr-3",
         })
-        <label for="roundCount" class="col-span-3"># of Rounds</label>
+        <label for="roundCount" class="col-span-3 ml-auto mr-3"># of Rounds</label>
         @Input( InputProps{
             Name: "roundCount",
             Type: "number",
             Value: fmt.Sprintf("%v", values.RoundCount),
             Error: errors["roundCount"],
             Placeholder: "# of rounds",
-            Classes: "my-1",
+            Classes: "my-1 mr-3",
         })
         <button class="col-span-6">Submit</button>
     </form>

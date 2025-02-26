@@ -10,16 +10,17 @@ import (
 	"go.etcd.io/bbolt"
 )
 
-func (b BBoltService) DataForLeeg(tx *bbolt.Tx, id string) (LeegData, error) {
+func (b BBoltService) DataForLeeg(tx *bbolt.Tx, leegID string) (LeegData, error) {
 	leegData := LeegData{}
 
 	leegsBucket := tx.Bucket([]byte(LeegsBucketKey))
 	if leegsBucket == nil {
 		return leegData, errors.New("failed to load leegs bucket")
 	}
-	leegBucket := leegsBucket.Bucket([]byte(id))
+
+	leegBucket := leegsBucket.Bucket([]byte(leegID))
 	if leegsBucket == nil {
-		return leegData, fmt.Errorf("failed to load leeg bucket with id %v", id)
+		return leegData, fmt.Errorf("failed to load leeg bucket with id %v", leegID)
 	}
 	leegDataBucket := leegBucket.Bucket([]byte(dataBucketKey))
 	if leegDataBucket == nil {
@@ -27,7 +28,7 @@ func (b BBoltService) DataForLeeg(tx *bbolt.Tx, id string) (LeegData, error) {
 	}
 
 	var leeg model.Leeg
-	var leegBytes = leegDataBucket.Get([]byte(id))
+	var leegBytes = leegDataBucket.Get([]byte(LeegDataKey))
 	if leegBytes == nil {
 		return leegData, errors.New("failed to retrieve leeg data bytes")
 	}
@@ -98,6 +99,18 @@ func (b BBoltService) CreateLeeg(request model.LeegCreateRequest) (model.EntityR
 			return err
 		}
 		leegRef = newLeeg.AsRef()
+		return nil
+	})
+}
+
+func (b BBoltService) GetLeeg(leegID string) (model.Leeg, error) {
+	var leeg model.Leeg
+	return leeg, b.Db.View(func(tx *bbolt.Tx) error {
+		leegData, err := b.DataForLeeg(tx, leegID)
+		if err != nil {
+			return err
+		}
+		leeg = leegData.Leeg
 		return nil
 	})
 }

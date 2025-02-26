@@ -12,6 +12,7 @@ type BBoltService struct {
 
 type LeegService interface {
 	GetLeegs() ([]model.EntityRef, error)
+	GetLeeg(leegID string) (model.Leeg, error)
 	CreateLeeg(request model.LeegCreateRequest) (model.EntityRef, error)
 }
 

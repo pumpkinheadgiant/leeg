@@ -585,6 +585,18 @@ video {
   margin-top: 0.5rem;
 }
 
+.ml-auto {
+  margin-left: auto;
+}
+
+.mr-2 {
+  margin-right: 0.5rem;
+}
+
+.mr-3 {
+  margin-right: 0.75rem;
+}
+
 .flex {
   display: flex;
 }
@@ -599,6 +611,10 @@ video {
 
 .w-full {
   width: 100%;
+}
+
+.min-w-\[250px\] {
+  min-width: 250px;
 }
 
 .cursor-pointer {
@@ -670,6 +686,10 @@ video {
 .text-red-500 {
   --tw-text-opacity: 1;
   color: rgb(239 68 68 / var(--tw-text-opacity, 1));
+}
+
+.no-underline {
+  text-decoration-line: none;
 }
 
 .antialiased {

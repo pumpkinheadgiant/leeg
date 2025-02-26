@@ -1,0 +1,13 @@
+package pages
+
+import (
+    "leeg/model"
+)
+
+templ LeegPage(leeg model.Leeg){
+    @Base() {
+        <span class="flex flex-row">
+            <span class="flex flex-col pt-3 mx-auto text-4xl">{leeg.Name}</span>
+        </span>
+    }
+}
