@@ -3,7 +3,7 @@ package pages
 import (
     "leeg/model"
     "leeg/views/components/forms"
-   
+   "fmt"
 )
 
 templ HomePage(leegs []model.EntityRef) {
@@ -17,14 +17,18 @@ templ HomePage(leegs []model.EntityRef) {
                     @LeegLink(leeg)
                 }
             </ul>
-            <span data-uk-toggle="target: #new-leeg-form" class="border p-1 bg-white rounded border-gray-700 mx-auto">
+            <span data-uk-toggle="target: #new-leeg-form" class="border p-1 cursor-pointer bg-white rounded border-gray-700 mx-auto">
                 New Leeg...
             </span>
-            @forms.LeegForm(model.LeegCreateRequest{TeamDescriptor: "Team"}, map[string]string{}, true, false)
+            @forms.LeegForm(model.LeegCreateRequest{TeamDescriptor: "Team", TeamCount: 4, RoundCount: 3}, map[string]string{}, true, false)
         </span>
     }
 }
 
 templ LeegLink(leeg model.EntityRef) {
-    <li class="bold mx-auto my-2 cursor-pointer"> {leeg.Text} </li>
+    <li class="bold no-underline mx-auto my-2 cursor-pointer">
+        <a href={templ.URL(fmt.Sprintf("/leegs/%v", leeg.ID))}>
+            {leeg.Text} 
+        </a>
+    </li>
 }

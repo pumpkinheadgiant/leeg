@@ -6,22 +6,30 @@ import (
 )
 
 type Leeg struct {
-	ID             string      `json:"id"`
-	Name           string      `json:"name"`
-	TeamDescriptor string      `json:"teamDescriptor"`
-	Teams          []EntityRef `json:"teams"`
-	Rounds         []Round     `json:"rounds"`
-	ImageURL       string      `json:"imageURL"`
+	ID             string  `json:"id"`
+	Name           string  `json:"name"`
+	TeamDescriptor string  `json:"teamDescriptor"`
+	Teams          []Team  `json:"teams"`
+	Rounds         []Round `json:"rounds"`
+	ImageURL       string  `json:"imageURL"`
 }
 
 func (l Leeg) AsRef() EntityRef {
 	return EntityRef{ID: l.ID, Text: l.Name, Image: l.ImageURL, Type: LeegType}
 }
 
+func (l Leeg) Status() LeegStatus {
+	status := LeegStatus{TotalRounds: len(l.Rounds), CurrentRound: 1, GamesRemainingInRound: len(l.Teams) / 2}
+	return status
+}
+
 type Team struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	ImageURL string `json:"imageURL"`
+	ID          string      `json:"id"`
+	Name        string      `json:"name"`
+	ImageURL    string      `json:"imageURL"`
+	Wins        int         `json:"wins"`
+	Losses      int         `json:"losses"`
+	TeamsPlayed []EntityRef `json:"teamsPlayed"`
 }
 
 func (t Team) AsRef() EntityRef {
@@ -38,6 +46,12 @@ type Game struct {
 	Winner EntityRef `json:"winner"`
 }
 
+type LeegStatus struct {
+	CurrentRound          int
+	TotalRounds           int
+	GamesRemainingInRound int
+}
+
 type LeegCreateRequest struct {
 	Name           string
 	TeamDescriptor string
@@ -51,8 +65,8 @@ func (l *LeegCreateRequest) ValidateAndNormalize() map[string]string {
 	if len(l.Name) < 1 || len(l.Name) > 50 {
 		errors["name"] = "please select a name with between 1 and 50 characters"
 	}
-	if l.TeamCount < 4 || l.TeamCount > 32 {
-		errors["teamCount"] = "please select between 4 and 32 teams"
+	if l.TeamCount < 4 || l.TeamCount > 32 || l.TeamCount%2 != 0 {
+		errors["teamCount"] = "please select an even number of between 4 and 32 teams"
 	}
 	if l.RoundCount < 1 || l.RoundCount > (l.TeamCount-1) {
 		errors["roundCount"] = fmt.Sprintf("please select between 1 and %v (# of Teams -1) rounds", l.TeamCount-1)

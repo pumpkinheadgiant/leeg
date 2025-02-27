@@ -10,7 +10,7 @@ import (
 	"leeg/svc"
 	"leeg/svc/migration"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"go.etcd.io/bbolt"
 )
 
@@ -40,6 +40,8 @@ func (l *LeegApp) Init() error {
 	leegHandler := LeegHandler{service: service}
 
 	router.Post("/leegs", Make(leegHandler.HandlePostLeeg))
+	router.Get("/leegs/{leegID}", Make(leegHandler.HandleGetLeeg))
+
 	l.router = router
 	return nil
 }

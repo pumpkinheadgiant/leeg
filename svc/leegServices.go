@@ -10,16 +10,17 @@ import (
 	"go.etcd.io/bbolt"
 )
 
-func (b BBoltService) DataForLeeg(tx *bbolt.Tx, id string) (LeegData, error) {
+func (b BBoltService) DataForLeeg(tx *bbolt.Tx, leegID string) (LeegData, error) {
 	leegData := LeegData{}
 
 	leegsBucket := tx.Bucket([]byte(LeegsBucketKey))
 	if leegsBucket == nil {
 		return leegData, errors.New("failed to load leegs bucket")
 	}
-	leegBucket := leegsBucket.Bucket([]byte(id))
+
+	leegBucket := leegsBucket.Bucket([]byte(leegID))
 	if leegsBucket == nil {
-		return leegData, fmt.Errorf("failed to load leeg bucket with id %v", id)
+		return leegData, fmt.Errorf("failed to load leeg bucket with id %v", leegID)
 	}
 	leegDataBucket := leegBucket.Bucket([]byte(dataBucketKey))
 	if leegDataBucket == nil {
@@ -27,7 +28,7 @@ func (b BBoltService) DataForLeeg(tx *bbolt.Tx, id string) (LeegData, error) {
 	}
 
 	var leeg model.Leeg
-	var leegBytes = leegDataBucket.Get([]byte(id))
+	var leegBytes = leegDataBucket.Get([]byte(LeegDataKey))
 	if leegBytes == nil {
 		return leegData, errors.New("failed to retrieve leeg data bytes")
 	}
@@ -37,11 +38,11 @@ func (b BBoltService) DataForLeeg(tx *bbolt.Tx, id string) (LeegData, error) {
 	}
 	leegData.Leeg = leeg
 
-	teamsBucket := leegBucket.Bucket([]byte(teamsBucketKey))
-	if teamsBucket == nil {
-		return leegData, errors.New("failed to load teamsBucket for leeg bucket")
+	gamesBucket := leegBucket.Bucket([]byte(gamesBucketKey))
+	if gamesBucket == nil {
+		return leegData, errors.New("failed to load games bucket for leeg")
 	}
-	leegData.TeamBucket = teamsBucket
+	leegData.GamesBucket = gamesBucket
 
 	return leegData, nil
 
@@ -59,8 +60,8 @@ func (b BBoltService) CreateLeeg(request model.LeegCreateRequest) (model.EntityR
 			ID:             model.NewId(),
 			Name:           request.Name,
 			TeamDescriptor: request.TeamDescriptor,
-			Teams:          []model.EntityRef{},
-			Rounds:         []model.Round{},
+			Teams:          []model.Team{},
+			Rounds:         make([]model.Round, request.RoundCount),
 		}
 		leegBucket, err := leegsBucket.CreateBucket([]byte(newLeeg.ID))
 		if err != nil {
@@ -70,24 +71,17 @@ func (b BBoltService) CreateLeeg(request model.LeegCreateRequest) (model.EntityR
 		if err != nil {
 			return err
 		}
-		teamsBucket, err := leegBucket.CreateBucket([]byte(teamsBucketKey))
+		_, err = leegBucket.CreateBucket([]byte(gamesBucketKey))
 		if err != nil {
 			return err
 		}
+
 		for i := range request.TeamCount {
 			var team = model.Team{
 				ID:   model.NewId(),
 				Name: fmt.Sprintf("%v %v", request.TeamDescriptor, i+1),
 			}
-			teamBytes, err := json.Marshal(team)
-			if err != nil {
-				return err
-			}
-			err = teamsBucket.Put([]byte(team.ID), teamBytes)
-			if err != nil {
-				return err
-			}
-			newLeeg.Teams = append(newLeeg.Teams, team.AsRef())
+			newLeeg.Teams = append(newLeeg.Teams, team)
 		}
 		leegBytes, err := json.Marshal(newLeeg)
 		if err != nil {
@@ -98,6 +92,18 @@ func (b BBoltService) CreateLeeg(request model.LeegCreateRequest) (model.EntityR
 			return err
 		}
 		leegRef = newLeeg.AsRef()
+		return nil
+	})
+}
+
+func (b BBoltService) GetLeeg(leegID string) (model.Leeg, error) {
+	var leeg model.Leeg
+	return leeg, b.Db.View(func(tx *bbolt.Tx) error {
+		leegData, err := b.DataForLeeg(tx, leegID)
+		if err != nil {
+			return err
+		}
+		leeg = leegData.Leeg
 		return nil
 	})
 }
