@@ -37,7 +37,7 @@ templ LeegStatus(status model.LeegStatus) {
 templ LeegTeams(teams []model.Team){
     <span class="w-full flex flex-row">
         <span class="w-full flex flex-col pt-3">
-            <ul class="w-full pl-4 pr-4">
+            <ul class="w-full  pl-4 pr-4">
                 for _, team := range teams {
                     @LeegTeam(team)
                 }
@@ -47,7 +47,7 @@ templ LeegTeams(teams []model.Team){
 }
 
 templ LeegTeam(team model.Team) {
-    <li class="w-full my-2 font-bold border bg-white rounded border-black">
+    <li class="mx-auto max-w-[500px] min-w-[300px] my-2 font-bold border bg-white rounded border-black">
         <span class="w-full flex flex-row m-2">
             <span class="w-full flex flex-col items-end">
                 <span class="mr-3">{ team.Name }</span>
