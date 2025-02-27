@@ -18,9 +18,12 @@ func (l Leeg) AsRef() EntityRef {
 	return EntityRef{ID: l.ID, Text: l.Name, Image: l.ImageURL, Type: LeegType}
 }
 
-func (l Leeg) Status() LeegStatus {
-	status := LeegStatus{TotalRounds: len(l.Rounds), CurrentRound: 1, GamesRemainingInRound: len(l.Teams) / 2}
-	return status
+func (l Leeg) TotalRounds() int {
+	return len(l.Rounds)
+}
+
+func (l Leeg) GamesPerRound() int {
+	return len(l.Teams) / 2
 }
 
 type Team struct {
@@ -37,19 +40,20 @@ func (t Team) AsRef() EntityRef {
 }
 
 type Round struct {
-	Games []Game `json:"games"`
+	Active        bool   `json:"active"`
+	RoundNumber   int    `json:"roundNumber"`
+	Games         []Game `json:"games"`
+	GamesPerRound int    `json:"gamesPerRound"`
+}
+
+func (r Round) Complete() bool {
+	return len(r.Games) == r.GamesPerRound
 }
 
 type Game struct {
 	TeamA  EntityRef `json:"teamA"`
 	TeamB  EntityRef `json:"teamB"`
 	Winner EntityRef `json:"winner"`
-}
-
-type LeegStatus struct {
-	CurrentRound          int
-	TotalRounds           int
-	GamesRemainingInRound int
 }
 
 type LeegCreateRequest struct {

@@ -55,13 +55,30 @@ func (b BBoltService) CreateLeeg(request model.LeegCreateRequest) (model.EntityR
 		if leegsBucket == nil {
 			return errors.New("failed to retrieve leegsBucket")
 		}
-
+		var rounds = []model.Round{}
+		for i := range request.RoundCount {
+			var round = model.Round{
+				Active:        i == 0, // round 1 will be the initial active round
+				RoundNumber:   i + 1,
+				Games:         []model.Game{},
+				GamesPerRound: request.TeamCount / 2,
+			}
+			rounds = append(rounds, round)
+		}
+		var teams = []model.Team{}
+		for i := range request.TeamCount {
+			var team = model.Team{
+				ID:   model.NewId(),
+				Name: fmt.Sprintf("%v %v", request.TeamDescriptor, i+1),
+			}
+			teams = append(teams, team)
+		}
 		var newLeeg = model.Leeg{
 			ID:             model.NewId(),
 			Name:           request.Name,
 			TeamDescriptor: request.TeamDescriptor,
-			Teams:          []model.Team{},
-			Rounds:         make([]model.Round, request.RoundCount),
+			Teams:          teams,
+			Rounds:         rounds,
 		}
 		leegBucket, err := leegsBucket.CreateBucket([]byte(newLeeg.ID))
 		if err != nil {
@@ -76,13 +93,6 @@ func (b BBoltService) CreateLeeg(request model.LeegCreateRequest) (model.EntityR
 			return err
 		}
 
-		for i := range request.TeamCount {
-			var team = model.Team{
-				ID:   model.NewId(),
-				Name: fmt.Sprintf("%v %v", request.TeamDescriptor, i+1),
-			}
-			newLeeg.Teams = append(newLeeg.Teams, team)
-		}
 		leegBytes, err := json.Marshal(newLeeg)
 		if err != nil {
 			return err
