@@ -7,6 +7,6 @@ import (
 )
 
 type LeegData struct {
-	Leeg       model.Leeg
-	TeamBucket *bbolt.Bucket
+	Leeg        model.Leeg
+	GamesBucket *bbolt.Bucket
 }

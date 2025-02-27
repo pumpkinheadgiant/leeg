@@ -2,12 +2,62 @@ package pages
 
 import (
     "leeg/model"
+	"fmt"
 )
 
 templ LeegPage(leeg model.Leeg){
     @Base() {
-        <span class="flex flex-row">
-            <span class="flex flex-col pt-3 mx-auto text-4xl">{leeg.Name}</span>
-        </span>
+        @LeegHeader(leeg)
+        @LeegStatus(leeg.Status())
+        @LeegTeams(leeg.Teams)
+        @LeegRounds(leeg.Rounds)
     }
+}
+
+templ LeegHeader(leeg model.Leeg) {
+    <span class="flex flex-row">
+        <span class="pt-2 pl-2 font-bold"><a href="/" class="text-black p-2 no-underline border rounded-full border-black">L</a></span>
+        <span class="pt-2 mx-auto text-4xl">{leeg.Name}</span>
+    </span>
+}
+
+templ LeegStatus(status model.LeegStatus) {
+    <span class="flex flex-row">
+            <span class="flex flex-col pt-3 mx-auto">
+                <span class="flex flex-row mx-auto">
+                    {fmt.Sprintf("Round %v/%v", status.CurrentRound, status.TotalRounds)}
+                </span>
+                <span class="flex flex-row mx-auto text-xs">
+                    {fmt.Sprintf("(%v games remaining in round %v)", status.GamesRemainingInRound, status.CurrentRound)}
+                </span>
+            </span>
+    </span>
+}
+
+templ LeegTeams(teams []model.Team){
+    <span class="w-full flex flex-row">
+        <span class="w-full flex flex-col pt-3">
+            <ul class="w-full pl-4 pr-4">
+                for _, team := range teams {
+                    @LeegTeam(team)
+                }
+            </ul>
+        </span>
+    </span>
+}
+
+templ LeegTeam(team model.Team) {
+    <li class="w-full my-2 font-bold border bg-white rounded border-black">
+        <span class="w-full flex flex-row m-2">
+            <span class="w-full flex flex-col items-end">
+                <span class="mr-3">{ team.Name }</span>
+            </span>
+            <span class="w-full flex flex-col items-start">
+                <span class="ml-3">{ fmt.Sprintf("%v/%v", team.Wins, team.Losses) }</span>
+            </span>
+        </span>
+    </li>
+}
+templ LeegRounds(rounds []model.Round) {
+
 }

@@ -19,4 +19,4 @@ type LeegService interface {
 const LeegsBucketKey = "leegs"
 const LeegDataKey = "leeg"
 const dataBucketKey = "data"
-const teamsBucketKey = "teems"
+const gamesBucketKey = "games"

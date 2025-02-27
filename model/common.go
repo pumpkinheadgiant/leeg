@@ -9,6 +9,17 @@ type EntityRef struct {
 	Image string     `json:"imag"`
 }
 
+type EntityRefList []EntityRef
+
+func (e EntityRefList) Contains(id string) bool {
+	for _, entity := range e {
+		if entity.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
 type EntityType string
 
 const LeegType EntityType = "leeg"
