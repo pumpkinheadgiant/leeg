@@ -11,17 +11,28 @@ templ HomePage(leegs []model.EntityRef) {
         <span class="flex flex-row">
             <span class="flex flex-col pt-3 mx-auto text-4xl">LEEGs</span>
         </span>
-        <span class="flex flex-col w-full mx-auto">
-            <ul id="leeg-list" class="mx-auto">
+        <span class="flex flex-col items-center mx-auto p-3">
+            <ul id="leeg-list" class="mx-auto !pl-0">
                 for _, leeg := range leegs {
                     @LeegLink(leeg)
                 }
             </ul>
-            <span data-uk-toggle="target: #new-leeg-form" class="border p-1 cursor-pointer bg-white rounded border-gray-700 mx-auto">
-                New Leeg...
+            <span class="flex flex-row">
+                <span data-uk-toggle="target: #new-leeg-form" class="mx-auto" hx-on:click="toggleIcon()">
+                    Create Leeg
+                </span>
+                <span id="toggle-icon" uk-icon="chevron-up"></span>
             </span>
             @forms.LeegForm(model.LeegCreateRequest{TeamDescriptor: "Team", TeamCount: 4, RoundCount: 3}, map[string]string{}, true, false)
         </span>
+        <script>
+            function toggleIcon() {
+                let icon = document.getElementById("toggle-icon");
+                let current = icon.getAttribute("uk-icon");
+                icon.setAttribute("uk-icon", current === "chevron-up" ? "chevron-down" : "chevron-up");
+                UIkit.icon(icon).toggle();
+            }
+        </script>
     }
 }
 

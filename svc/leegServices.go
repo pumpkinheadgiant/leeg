@@ -62,6 +62,7 @@ func (b BBoltService) CreateLeeg(request model.LeegCreateRequest) (model.EntityR
 				RoundNumber:   i + 1,
 				Games:         []model.Game{},
 				GamesPerRound: request.TeamCount / 2,
+				TeamsPlayed:   model.EntityRefList{},
 			}
 			rounds = append(rounds, round)
 		}

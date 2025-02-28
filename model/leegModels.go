@@ -40,10 +40,11 @@ func (t Team) AsRef() EntityRef {
 }
 
 type Round struct {
-	Active        bool   `json:"active"`
-	RoundNumber   int    `json:"roundNumber"`
-	Games         []Game `json:"games"`
-	GamesPerRound int    `json:"gamesPerRound"`
+	Active        bool          `json:"active"`
+	RoundNumber   int           `json:"roundNumber"`
+	Games         []Game        `json:"games"`
+	GamesPerRound int           `json:"gamesPerRound"`
+	TeamsPlayed   EntityRefList `json:"teamsPlayed"`
 }
 
 func (r Round) Complete() bool {
