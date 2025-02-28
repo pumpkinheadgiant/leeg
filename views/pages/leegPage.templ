@@ -8,29 +8,17 @@ import (
 templ LeegPage(leeg model.Leeg){
     @Base() {
         @LeegHeader(leeg)
-        @LeegStatus(leeg.Status())
         @LeegTeams(leeg.Teams)
-        @LeegRounds(leeg.Rounds)
+        @LeegRounds(leeg)
     }
 }
 
 templ LeegHeader(leeg model.Leeg) {
-    <span class="flex flex-row">
-        <span class="pt-2 pl-2 font-bold"><a href="/" class="text-black p-2 no-underline border rounded-full border-black">L</a></span>
-        <span class="pt-2 mx-auto text-4xl">{leeg.Name}</span>
-    </span>
-}
-
-templ LeegStatus(status model.LeegStatus) {
-    <span class="flex flex-row">
-            <span class="flex flex-col pt-3 mx-auto">
-                <span class="flex flex-row mx-auto">
-                    {fmt.Sprintf("Round %v/%v", status.CurrentRound, status.TotalRounds)}
-                </span>
-                <span class="flex flex-row mx-auto text-xs">
-                    {fmt.Sprintf("(%v games remaining in round %v)", status.GamesRemainingInRound, status.CurrentRound)}
-                </span>
-            </span>
+    <span class="flex flex-row p-2">
+        <span class="flex flex-col w-auto h-auto align-center justify-center font-bold mt-2 my-2">
+            <a href="/" class="flex items-center justify-center w-[30px] h-[30px] text-white text-lg font-bold no-underline bg-black border rounded-full border-black">L</a>
+        </span>
+        <span class="mt-2 mx-auto text-4xl">{leeg.Name}</span>
     </span>
 }
 
@@ -47,7 +35,7 @@ templ LeegTeams(teams []model.Team){
 }
 
 templ LeegTeam(team model.Team) {
-    <li class="w-full my-2 font-bold border bg-white rounded border-black">
+    <li class="mx-auto min-w-[300px] max-w-[500px] my-2 font-bold border bg-white rounded border-black">
         <span class="w-full flex flex-row m-2">
             <span class="w-full flex flex-col items-end">
                 <span class="mr-3">{ team.Name }</span>
@@ -58,6 +46,53 @@ templ LeegTeam(team model.Team) {
         </span>
     </li>
 }
-templ LeegRounds(rounds []model.Round) {
 
+templ LeegRounds(leeg model.Leeg) {
+    <span class="w-full flex flex-row">
+        <span class="w-full flex flex-col items-center m-1 p-w border border-black rounded">
+            <ul class="w-full mt-2 pl-4 pr-4 items-center">
+                for _, round := range leeg.Rounds {
+                    @LeegRound(round)
+                }
+            </ul>
+        </span>
+    </span>
+}
+
+templ LeegRound(round model.Round) {
+    <li class="w-full p-1 bg-white border flex flex-row items-center rounded border-black">
+        <span class="flex flex-col mx-auto">
+            if round.Active {
+                @ActiveLeegRound(round)
+            } else if round.Complete() {
+                @CompletedLeegRound(round)
+            } else {
+                <span class="w-full mx-4 my-1 text-sm font-italic">
+                    { fmt.Sprintf("Round %v", round.RoundNumber)}
+                </span>
+            }
+        </span> 
+    </li>
+}
+
+templ ActiveLeegRound(round model.Round) {
+    <span class="mx-auto my-1 text-lg font-bold">
+        { fmt.Sprintf("Round %v", round.RoundNumber)}
+    </span>
+    @RoundControls(round)
+}
+
+templ RoundControls(round model.Round) {
+    <span class="flex flex-row gap-3">
+        if !round.Complete() {
+            <span class="uk-button uk-button-default">Record Game</span>
+            <span class="uk-button uk-button-default">Request Game</span>
+        }
+    </span>
+}
+
+templ CompletedLeegRound(round model.Round) {
+    <span class="w-full mx-4 my-1 text-med">
+        { fmt.Sprintf("Round %v", round.RoundNumber)}
+    </span>
 }
