@@ -614,6 +614,7 @@ video {
   margin-top: 0.5rem;
 }
 
+
 .\!ml-0 {
   margin-left: 0px !important;
 }
@@ -730,6 +731,11 @@ video {
 .border-gray-700 {
   --tw-border-opacity: 1;
   border-color: rgb(55 65 81 / var(--tw-border-opacity, 1));
+}
+
+.border-black {
+  --tw-border-opacity: 1;
+  border-color: rgb(0 0 0 / var(--tw-border-opacity, 1));
 }
 
 .\!bg-white {

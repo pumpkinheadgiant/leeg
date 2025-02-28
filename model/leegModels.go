@@ -57,6 +57,12 @@ type Game struct {
 	Winner EntityRef `json:"winner"`
 }
 
+type LeegStatus struct {
+	CurrentRound          int
+	TotalRounds           int
+	GamesRemainingInRound int
+}
+
 type LeegCreateRequest struct {
 	Name           string
 	TeamDescriptor string
