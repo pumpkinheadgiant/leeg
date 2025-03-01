@@ -60,14 +60,14 @@ templ LeegRounds(leeg model.Leeg) {
 }
 
 templ LeegRound(round model.Round) {
-    <li class="w-full p-1 bg-white border flex flex-row items-center rounded border-black">
+    <li class="mx-auto max-w-[550px] p-1 bg-white border flex flex-row items-center rounded border-black">
         <span class="flex flex-col mx-auto">
             if round.Active {
                 @ActiveLeegRound(round)
             } else if round.Complete() {
                 @CompletedLeegRound(round)
             } else {
-                <span class="w-full mx-4 my-1 text-sm font-italic">
+                <span class="w-full mx-4 my-1 text-sm italic">
                     { fmt.Sprintf("Round %v", round.RoundNumber)}
                 </span>
             }
@@ -86,7 +86,9 @@ templ RoundControls(round model.Round) {
     <span class="flex flex-row gap-3">
         if !round.Complete() {
             <span class="uk-button uk-button-default">Record Game</span>
-            <span class="uk-button uk-button-default">Request Game</span>
+            <span class="uk-button uk-button-default"
+                hx-post={fmt.Sprintf("/leegs/%v/rounds/%v/game/",round.LeegID, round.RoundNumber)}
+            >Request Game</span>
         }
     </span>
 }

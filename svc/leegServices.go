@@ -10,6 +10,27 @@ import (
 	"go.etcd.io/bbolt"
 )
 
+func (b BBoltService) CreateRandomGame(leegID string, roundNumber int) (model.Round, model.Game, error) {
+	var game model.Game
+	var round model.Round
+	return round, game, b.Db.Update(func(tx *bbolt.Tx) error {
+		leegData, err := b.DataForLeeg(tx, leegID)
+		if err != nil {
+			return err
+		}
+		leeg := leegData.Leeg
+		if roundNumber < 1 || roundNumber > leeg.TotalRounds() {
+			return fmt.Errorf("invalid roundNumber: %v", roundNumber)
+		}
+		// round, err := leeg.GetCurrentRound()
+		if err != nil {
+			return err
+		}
+		// game := round.GetR
+		return nil
+	})
+}
+
 func (b BBoltService) DataForLeeg(tx *bbolt.Tx, leegID string) (LeegData, error) {
 	leegData := LeegData{}
 
@@ -45,7 +66,6 @@ func (b BBoltService) DataForLeeg(tx *bbolt.Tx, leegID string) (LeegData, error)
 	leegData.GamesBucket = gamesBucket
 
 	return leegData, nil
-
 }
 
 func (b BBoltService) CreateLeeg(request model.LeegCreateRequest) (model.EntityRef, error) {
@@ -55,11 +75,14 @@ func (b BBoltService) CreateLeeg(request model.LeegCreateRequest) (model.EntityR
 		if leegsBucket == nil {
 			return errors.New("failed to retrieve leegsBucket")
 		}
+		newLeegID := model.NewId()
+
 		var rounds = []model.Round{}
 		for i := range request.RoundCount {
 			var round = model.Round{
 				Active:        i == 0, // round 1 will be the initial active round
 				RoundNumber:   i + 1,
+				LeegID:        newLeegID,
 				Games:         []model.Game{},
 				GamesPerRound: request.TeamCount / 2,
 				TeamsPlayed:   model.EntityRefList{},
@@ -74,8 +97,9 @@ func (b BBoltService) CreateLeeg(request model.LeegCreateRequest) (model.EntityR
 			}
 			teams = append(teams, team)
 		}
+
 		var newLeeg = model.Leeg{
-			ID:             model.NewId(),
+			ID:             newLeegID,
 			Name:           request.Name,
 			TeamDescriptor: request.TeamDescriptor,
 			Teams:          teams,

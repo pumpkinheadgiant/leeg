@@ -38,9 +38,12 @@ func (l *LeegApp) Init() error {
 	router.Get("/", Make(homeHandler.HandleGetHome))
 
 	leegHandler := LeegHandler{service: service}
+	gameHandler := GameHandler{service: service}
 
 	router.Post("/leegs", Make(leegHandler.HandlePostLeeg))
 	router.Get("/leegs/{leegID}", Make(leegHandler.HandleGetLeeg))
+
+	router.Post("/leegs/{leegID}/rounds/{roundNumber}/games", Make(gameHandler.HandlePostGameRequest))
 
 	l.router = router
 	return nil

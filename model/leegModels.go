@@ -1,17 +1,19 @@
 package model
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
 
 type Leeg struct {
-	ID             string  `json:"id"`
-	Name           string  `json:"name"`
-	TeamDescriptor string  `json:"teamDescriptor"`
-	Teams          []Team  `json:"teams"`
-	Rounds         []Round `json:"rounds"`
-	ImageURL       string  `json:"imageURL"`
+	ID             string                   `json:"id"`
+	Name           string                   `json:"name"`
+	TeamDescriptor string                   `json:"teamDescriptor"`
+	Teams          []Team                   `json:"teams"`
+	Rounds         []Round                  `json:"rounds"`
+	ImageURL       string                   `json:"imageURL"`
+	MatchupMap     map[string]EntityRefList `json:"matchupMap"`
 }
 
 func (l Leeg) AsRef() EntityRef {
@@ -24,6 +26,15 @@ func (l Leeg) TotalRounds() int {
 
 func (l Leeg) GamesPerRound() int {
 	return len(l.Teams) / 2
+}
+
+func (l Leeg) GetCurrentRound() (Round, error) {
+	for _, round := range l.Rounds {
+		if round.Active {
+			return round, nil
+		}
+	}
+	return Round{}, errors.New("no active rounds in leeg")
 }
 
 type Team struct {
@@ -40,6 +51,7 @@ func (t Team) AsRef() EntityRef {
 }
 
 type Round struct {
+	LeegID        string        `json:"leegID"`
 	Active        bool          `json:"active"`
 	RoundNumber   int           `json:"roundNumber"`
 	Games         []Game        `json:"games"`
@@ -51,10 +63,23 @@ func (r Round) Complete() bool {
 	return len(r.Games) == r.GamesPerRound
 }
 
+func (r Round) GenerateMatchup(seasonMatchups map[string]EntityRefList) (Game, error) {
+	var newGame = Game{}
+
+	// teamsPlayedThisRound := r.TeamsPlayed
+
+	return newGame, nil
+}
+
 type Game struct {
-	TeamA  EntityRef `json:"teamA"`
-	TeamB  EntityRef `json:"teamB"`
-	Winner EntityRef `json:"winner"`
+	GameNumber int       `json:"gameNumber"`
+	TeamA      EntityRef `json:"teamA"`
+	TeamB      EntityRef `json:"teamB"`
+	Winner     EntityRef `json:"winner"`
+}
+
+func (g Game) Complete() bool {
+	return g.Winner.ID != ""
 }
 
 type LeegStatus struct {
