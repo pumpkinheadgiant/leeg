@@ -50,9 +50,9 @@ templ LeegTeam(team model.Team) {
 }
 
 templ LeegRounds(rounds model.EntityRefList) {
-    <span class="mx-auto max-w-[600px]flex flex-row">
+    <span class="mx-auto min-w-[500px] max-w-[600px]flex flex-row">
         <span class="flex flex-col items-center m-1">
-            <span class="m-4 p-4 min-w-[400px] items-center border border-black rounded">
+            <span class="m-4 min-w-[400px] bg-white items-center border border-black">
                 for _, round := range rounds {
                     @RoundContainer(round)
                 }
@@ -62,7 +62,7 @@ templ LeegRounds(rounds model.EntityRefList) {
 }
 
 templ RoundContainer(round model.EntityRef) {
-     <span class="mx-auto p-1 bg-white flex flex-col items-center">
+     <span class="mx-auto p-3 bg-white flex flex-col items-center">
         @RoundHeader(views.LeegID(ctx), round, false, false)
         @RoundContent(model.Round{}, round)
      </span>
@@ -105,14 +105,20 @@ templ RoundContent(round model.Round, roundRef model.EntityRef) {
 
 templ Round(round model.Round) {
     <span id={fmt.Sprintf("round-content-%v", round.ID)}
-        class="mx-auto max-w-[550px] p-1 bg-white border flex flex-row items-center rounded border-black">
+        class="mx-auto max-w-[550px] bg-white border flex flex-row items-center rounded border-black">
         <span class="flex flex-col mx-auto">
             <span class="mx-auto flex flex-row font-bold">
                 { fmt.Sprintf("Round %v", round.RoundNumber)}
             </span>
-            // @RoundGames(round)
+            @RoundGames(round)
             @RoundControls(round)
         </span>
+    </span>
+}
+
+templ RoundGames(round model.Round) {
+    <span class="flex grid grid-cols-6 sm:grid-cols-12">
+    
     </span>
 }
 
@@ -148,7 +154,7 @@ templ EditGameDetail(game model.Game) {
 }
 
 templ RoundControls(round model.Round) {
-    <span class="w-full flex flex-row gap-3">
+    <span class="w-full flex flex-row gap-3 m-2">
         
         <span class="uk-button uk-button-default">
             Record Game
