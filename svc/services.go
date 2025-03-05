@@ -2,22 +2,26 @@ package svc
 
 import (
 	"leeg/model"
+	"leeg/rando"
 
 	"go.etcd.io/bbolt"
 )
 
-type BBoltService struct {
-	Db *bbolt.DB
+type LeegServices struct {
+	Db    *bbolt.DB
+	Rando rando.RandoConfig
 }
 
 type LeegService interface {
-	GetLeegs() ([]model.EntityRef, error)
-	GetLeeg(leegID string) (model.Leeg, error)
 	CreateLeeg(request model.LeegCreateRequest) (model.EntityRef, error)
-	CreateRandomGame(leegID string, roundNumber int) (model.Round, model.Game, error)
+	CreateRandomGame(leegID string, roundID string) (model.Round, model.Game, error)
+	GetLeeg(leegID string) (model.Leeg, error)
+	GetLeegs() ([]model.EntityRef, error)
+	GetRound(leegID string, roundID string) (model.Round, error)
 }
 
 const LeegsBucketKey = "leegs"
-const LeegDataKey = "leeg"
+const leegDataID = "leeg"
 const dataBucketKey = "data"
+const roundsBucketKey = "rounds"
 const gamesBucketKey = "games"

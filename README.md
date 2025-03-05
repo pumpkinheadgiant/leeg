@@ -24,9 +24,9 @@ https://go.dev/dl/go1.23.6.darwin-arm64.pkg
 `go install github.com/a-h/templ/cmd/templ@latest`
 
 ### install boltbrowser
-`boltbrowser` is a CLI browser for inspecting the bbolt db file
+`boltbrowser` is a CLI browser for inspecting the bbolt db file. Note that only one process can access the file at a time, so `boltbrowser` won't open if the app is running.
 
-`go install github.com/br0xen/boltbrowser`
+`go install github.com/br0xen/boltbrowser@latest`
 
 ### install delve
 `go-delve` allows VS-Code to locally debug go apps
@@ -46,7 +46,7 @@ mv tailwindcss_full_bin_name tailwindcss
 chmod +x tailwindcss
 ``` 
 
-On Mac, in finder, `cntrl-click` open the file in the Browser to allow it be opened. 
+On Mac, in finder, `cntrl-click` open the file in the Finder to allow it be opened. 
 
 ## Run
 ### VSCode
@@ -95,7 +95,6 @@ followed by a listing of monitored resources, followed by application startup lo
 
 ## Use
 The application will be served at http://localhost:8818/ if all pieces are properly aligned.
-
-      
+     
 ##### Special thanks for the Letter 'L' icon:
 <a href="https://www.flaticon.com/free-icons/letter-l" title="letter l icons">Letter l icons created by Hight Quality Icons - Flaticon</a>

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -24,8 +25,9 @@ func (l LeegHandler) HandleGetLeeg(w http.ResponseWriter, r *http.Request) error
 	if err != nil {
 		return err
 	}
+	ctx := context.WithValue(r.Context(), model.ContextKey{}, leeg.ID)
 
-	return Render(w, r, pages.LeegPage(leeg))
+	return Render(w, r.WithContext(ctx), pages.LeegPage(leeg))
 }
 
 func (l LeegHandler) HandlePostLeeg(w http.ResponseWriter, r *http.Request) error {

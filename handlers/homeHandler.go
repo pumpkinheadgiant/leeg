@@ -8,12 +8,12 @@ import (
 )
 
 type HomeHandler struct {
-	service svc.LeegService
+	services svc.LeegService
 }
 
 func (h HomeHandler) HandleGetHome(w http.ResponseWriter, r *http.Request) error {
 
-	leegs, err := h.service.GetLeegs()
+	leegs, err := h.services.GetLeegs()
 	if err != nil {
 		return err
 	}

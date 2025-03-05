@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"leeg/svc"
+	"leeg/views/pages"
 	"net/http"
 )
 
@@ -9,24 +10,23 @@ type GameHandler struct {
 	service svc.LeegService
 }
 
-func (g GameHandler) HandlePostGameRequest(w http.ResponseWriter, r *http.Request) error {
+func (g GameHandler) HandleGameCreationRequest(w http.ResponseWriter, r *http.Request) error {
 	leegID := r.PathValue("leegID")
 	if leegID == "" {
 		w.WriteHeader(http.StatusNotFound)
 		return hxRedirect(w, r, "/")
 	}
-	var roundNumber = 0
 
-	roundNumberValue := r.PathValue("roundNumber")
-	if roundNumberValue == "" {
+	roundID := r.PathValue("roundID")
+	if roundID == "" {
 		w.WriteHeader(http.StatusNotFound)
 		return hxRedirect(w, r, "/")
 	}
 
-	_, _, err := g.service.CreateRandomGame(leegID, roundNumber)
+	round, _, err := g.service.CreateRandomGame(leegID, roundID)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return Render(w, r, pages.Round(round))
 }
