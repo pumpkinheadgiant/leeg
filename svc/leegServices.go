@@ -175,6 +175,12 @@ func (b LeegServices) CreateLeeg(request model.LeegCreateRequest) (model.EntityR
 				UnplayedTeams: allTeamsList,
 			}
 
+			roundRef := round.AsRef()
+			if i == 0 {
+				newLeeg.ActiveRound = roundRef
+				round.IsActive = true
+			}
+
 			roundBytes, err := json.Marshal(round)
 			if err != nil {
 				return err
@@ -183,10 +189,7 @@ func (b LeegServices) CreateLeeg(request model.LeegCreateRequest) (model.EntityR
 			if err != nil {
 				return err
 			}
-			roundRef := round.AsRef()
-			if i == 0 {
-				newLeeg.ActiveRound = roundRef
-			}
+
 			newLeeg.Rounds = append(newLeeg.Rounds, roundRef)
 		}
 		leegBytes, err := json.Marshal(newLeeg)

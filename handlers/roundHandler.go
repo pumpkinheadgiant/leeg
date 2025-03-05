@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"leeg/model"
 	"leeg/svc"
 	"leeg/views/pages"
@@ -29,16 +30,23 @@ func (rh RoundHandler) HandleGetRound(w http.ResponseWriter, r *http.Request) er
 		return err
 	}
 	if open {
-		err = Render(w, r, pages.RoundContent(round, round.AsRef()))
-		if err != nil {
-			return err
+		if round.IsActive {
+			err = Render(w, r, pages.RoundContent(round, round.AsRef()))
+			if err != nil {
+				return err
+			}
+			return Render(w, r, pages.RoundHeader(leegID, round.AsRef(), open, true))
+		} else {
+			w.Header().Set("Leeg-Message", fmt.Sprintf("Round %v is not yet active", round.RoundNumber))
+			w.Header().Set("Leeg-Status", "warning")
+			return Render(w, r, pages.RoundContent(model.Round{}, round.AsRef()))
 		}
 	} else {
 		err := Render(w, r, pages.RoundContent(model.Round{}, round.AsRef()))
 		if err != nil {
 			return err
 		}
+		return Render(w, r, pages.RoundHeader(leegID, round.AsRef(), open, true))
 	}
 
-	return Render(w, r, pages.RoundHeader(leegID, round.AsRef(), open, true))
 }

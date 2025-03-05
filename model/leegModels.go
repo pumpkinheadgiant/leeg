@@ -53,6 +53,7 @@ type Round struct {
 	LeegID        string        `json:"leegID"`
 	RoundNumber   int           `json:"roundNumber"`
 	Games         EntityRefList `json:"games"`
+	IsActive      bool          `json:"isActive"`
 	GamesPerRound int           `json:"gamesPerRound"`
 	UnplayedTeams EntityRefList `json:"unplayedTeams"`
 }
