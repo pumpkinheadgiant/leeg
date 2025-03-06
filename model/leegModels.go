@@ -6,16 +6,19 @@ import (
 )
 
 type Leeg struct {
-	ID             string  `json:"id"`
-	Name           string  `json:"name"`
-	TeamDescriptor string  `json:"teamDescriptor"`
-	Teams          []Team  `json:"teams"`
-	Rounds         []Round `json:"rounds"`
-	ImageURL       string  `json:"imageURL"`
+	ID             string        `json:"id"`
+	Name           string        `json:"name"`
+	TeamDescriptor string        `json:"teamDescriptor"`
+	Teams          []Team        `json:"teams"`
+	Rounds         EntityRefList `json:"rounds"`
+	ImageURL       string        `json:"imageURL"`
+	MatchupMap     MatchupMap    `json:"matchupMap"`
+	ActiveRound    EntityRef     `json:"activeRound"`
+	Scheduled      bool          `json:"scheduled"`
 }
 
 func (l Leeg) AsRef() EntityRef {
-	return EntityRef{ID: l.ID, Text: l.Name, Image: l.ImageURL, Type: LeegType}
+	return EntityRef{ID: l.ID, Text: l.Name, ImageURL: l.ImageURL, Type: LEEG}
 }
 
 func (l Leeg) TotalRounds() int {
@@ -26,35 +29,89 @@ func (l Leeg) GamesPerRound() int {
 	return len(l.Teams) / 2
 }
 
+func (l Leeg) GetNextRound() EntityRef {
+	currentRoundIdx := l.getCurrentRoundIdx()
+	if currentRoundIdx == -1 || currentRoundIdx+1 == len(l.Rounds) {
+		return EntityRef{}
+	}
+	return l.Rounds[currentRoundIdx+1]
+}
+
+func (l Leeg) getCurrentRoundIdx() int {
+	for i, round := range l.Rounds {
+		if round.ID == l.ActiveRound.ID {
+			return i
+		}
+	}
+	return -1
+}
+
 type Team struct {
-	ID          string      `json:"id"`
-	Name        string      `json:"name"`
-	ImageURL    string      `json:"imageURL"`
-	Wins        int         `json:"wins"`
-	Losses      int         `json:"losses"`
-	TeamsPlayed []EntityRef `json:"teamsPlayed"`
+	ID              string        `json:"id"`
+	Name            string        `json:"name"`
+	ImageURL        string        `json:"imageURL"`
+	TeamsDefeated   EntityRefList `json:"teamsDefeated"`
+	TeamsDefeatedBy EntityRefList `json:"teamsDefeatedBy"`
+}
+
+func (t Team) Wins() int {
+	return len(t.TeamsDefeated)
+}
+
+func (t Team) Losses() int {
+	return len(t.TeamsDefeatedBy)
 }
 
 func (t Team) AsRef() EntityRef {
-	return EntityRef{ID: t.ID, Text: t.Name, Image: t.ImageURL, Type: TeamType}
+	return EntityRef{ID: t.ID, Text: t.Name, ImageURL: t.ImageURL, Type: TEAM}
 }
 
 type Round struct {
-	Active        bool          `json:"active"`
+	ID            string        `json:"id"`
+	LeegID        string        `json:"leegID"`
 	RoundNumber   int           `json:"roundNumber"`
-	Games         []Game        `json:"games"`
+	Games         EntityRefList `json:"games"`
+	IsActive      bool          `json:"isActive"`
 	GamesPerRound int           `json:"gamesPerRound"`
-	TeamsPlayed   EntityRefList `json:"teamsPlayed"`
+	UnplayedTeams EntityRefList `json:"unplayedTeams"`
 }
 
-func (r Round) Complete() bool {
+func (r Round) Scheduled() bool {
 	return len(r.Games) == r.GamesPerRound
 }
 
+func (r Round) GenerateMatchup(seasonMatchups map[string]EntityRefList) (Game, error) {
+	var newGame = Game{}
+
+	// teamsPlayedThisRound := r.TeamsPlayed
+
+	return newGame, nil
+}
+
+func (r Round) AsRef() EntityRef {
+	return EntityRef{ID: r.ID, Type: ROUND, Text: fmt.Sprintf("Round %v", r.RoundNumber)}
+}
+
 type Game struct {
-	TeamA  EntityRef `json:"teamA"`
-	TeamB  EntityRef `json:"teamB"`
-	Winner EntityRef `json:"winner"`
+	ID          string    `json:"id"`
+	Round       EntityRef `json:"round"`
+	RoundNumber int       `json:"roundNumber"`
+	GameNumber  int       `json:"gameNumber"`
+	TeamA       EntityRef `json:"teamA"`
+	TeamB       EntityRef `json:"teamB"`
+	Winner      EntityRef `json:"winner"`
+}
+
+func (g Game) Complete() bool {
+	return g.Winner.ID != ""
+}
+
+func (g Game) AsRef() EntityRef {
+	var outcome = "TBD"
+	if g.Winner.ID != "" {
+		outcome = fmt.Sprintf("Winner: %v", g.Winner.Text)
+	}
+	return EntityRef{ID: g.ID, Text: fmt.Sprintf("Game %v. %v vs %v. Winner: %v", g.GameNumber, g.TeamA.Text, g.TeamB.Text, outcome)}
 }
 
 type LeegStatus struct {
@@ -87,4 +144,27 @@ func (l *LeegCreateRequest) ValidateAndNormalize() map[string]string {
 		errors["teamDescriptor"] = "team descriptor should be between 1 and 20 characters"
 	}
 	return errors
+}
+
+type LeegPageData struct {
+	Leeg        Leeg
+	ActiveRound Round
+}
+
+type MatchupMap map[string]EntityRefList
+
+func (m *MatchupMap) RecordMatchup(game Game) error {
+	var teamAMatchups = (*m)[game.TeamA.ID]
+	var teamBMatchups = (*m)[game.TeamB.ID]
+
+	if teamAMatchups.HasID(game.TeamB.ID) || teamBMatchups.HasID(game.TeamA.ID) {
+		return fmt.Errorf("%v and %v have already played", game.TeamA.Text, game.TeamB.Text)
+	}
+	(*m)[game.TeamA.ID] = append((*m)[game.TeamA.ID], game.TeamB)
+	(*m)[game.TeamB.ID] = append((*m)[game.TeamB.ID], game.TeamA)
+	return nil
+}
+
+type ContextKey struct {
+	ID string
 }

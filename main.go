@@ -2,16 +2,18 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"log/slog"
 
-	"github.com/joho/godotenv"
 	"leeg/handlers"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
 	if err := godotenv.Load(); err != nil {
 		slog.Error("problem loading env", "err", err)
-
+		log.Fatal("exiting due to env load failure")
 	}
 
 	fmt.Println(fmt.Sprintf("let the leeg begin!"))

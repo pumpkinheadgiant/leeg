@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"leeg/rando"
 	"leeg/svc"
 	"leeg/svc/migration"
 
@@ -30,17 +31,23 @@ func (l *LeegApp) Init() error {
 	if err != nil {
 		return err
 	}
-	service := svc.BBoltService{Db: database}
-	homeHandler := HomeHandler{service}
+	services := svc.LeegServices{Db: database, Rando: rando.RandoConfig{}}
+
+	homeHandler := HomeHandler{services}
+	leegHandler := LeegHandler{services}
+	gameHandler := GameHandler{services}
+	roundHandler := RoundHandler{services}
 	router := chi.NewMux()
-	router.Handle("/*", publicHandler()) // Serve files under /public/
+	router.Handle("/*", publicHandler())
 
 	router.Get("/", Make(homeHandler.HandleGetHome))
 
-	leegHandler := LeegHandler{service: service}
-
 	router.Post("/leegs", Make(leegHandler.HandlePostLeeg))
 	router.Get("/leegs/{leegID}", Make(leegHandler.HandleGetLeeg))
+
+	router.Post("/leegs/{leegID}/rounds/{roundID}/games", Make(gameHandler.HandleGameCreationRequest))
+	router.Put("/leegs/{leegID}/rounds/{roundID}/games/{gameID}", Make(gameHandler.HandleGameCreationRequest))
+	router.Get("/leegs/{leegID}/rounds/{roundID}", Make(roundHandler.HandleGetRound))
 
 	l.router = router
 	return nil
