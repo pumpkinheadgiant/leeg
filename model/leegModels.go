@@ -14,6 +14,7 @@ type Leeg struct {
 	ImageURL       string        `json:"imageURL"`
 	MatchupMap     MatchupMap    `json:"matchupMap"`
 	ActiveRound    EntityRef     `json:"activeRound"`
+	Scheduled      bool          `json:"scheduled"`
 }
 
 func (l Leeg) AsRef() EntityRef {
@@ -26,6 +27,23 @@ func (l Leeg) TotalRounds() int {
 
 func (l Leeg) GamesPerRound() int {
 	return len(l.Teams) / 2
+}
+
+func (l Leeg) GetNextRound() EntityRef {
+	currentRoundIdx := l.getCurrentRoundIdx()
+	if currentRoundIdx == -1 || currentRoundIdx+1 == len(l.Rounds) {
+		return EntityRef{}
+	}
+	return l.Rounds[currentRoundIdx+1]
+}
+
+func (l Leeg) getCurrentRoundIdx() int {
+	for i, round := range l.Rounds {
+		if round.ID == l.ActiveRound.ID {
+			return i
+		}
+	}
+	return -1
 }
 
 type Team struct {

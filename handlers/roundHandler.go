@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"leeg/model"
 	"leeg/svc"
-	"leeg/views/pages"
+	"leeg/views/components"
 	"net/http"
 )
 
@@ -31,22 +31,22 @@ func (rh RoundHandler) HandleGetRound(w http.ResponseWriter, r *http.Request) er
 	}
 	if open {
 		if round.IsActive {
-			err = Render(w, r, pages.RoundContent(round, round.AsRef(), games))
+			err = Render(w, r, components.RoundContent(round, round.AsRef(), games))
 			if err != nil {
 				return err
 			}
-			return Render(w, r, pages.RoundHeader(leegID, round.AsRef(), open, true))
+			return Render(w, r, components.RoundHeader(leegID, round.AsRef(), open, true))
 		} else {
 			w.Header().Set("Leeg-Message", fmt.Sprintf("Round %v is not yet active", round.RoundNumber))
 			w.Header().Set("Leeg-Status", "gray")
-			return Render(w, r, pages.RoundContent(model.Round{}, round.AsRef(), map[string]model.Game{}))
+			return Render(w, r, components.RoundContent(model.Round{}, round.AsRef(), map[string]model.Game{}))
 		}
 	} else {
-		err := Render(w, r, pages.RoundContent(model.Round{}, round.AsRef(), map[string]model.Game{}))
+		err := Render(w, r, components.RoundContent(model.Round{}, round.AsRef(), map[string]model.Game{}))
 		if err != nil {
 			return err
 		}
-		return Render(w, r, pages.RoundHeader(leegID, round.AsRef(), open, true))
+		return Render(w, r, components.RoundHeader(leegID, round.AsRef(), open, true))
 	}
 
 }

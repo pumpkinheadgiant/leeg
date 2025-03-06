@@ -56,6 +56,9 @@ func (l LeegData) getGameByIDMapForRound(round model.Round) (map[string]model.Ga
 }
 
 func (l LeegData) saveLeeg(leeg model.Leeg) error {
-
-	return nil
+	leegBytes, err := json.Marshal(leeg)
+	if err != nil {
+		return err
+	}
+	return l.DataBucket.Put([]byte(leegDataID), leegBytes)
 }

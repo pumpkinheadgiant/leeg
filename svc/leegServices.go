@@ -37,6 +37,30 @@ func (l LeegServices) CreateRandomGame(leegID string, roundID string) (model.Rou
 		}
 
 		round.Games = append(round.Games, game.AsRef())
+
+		if len(round.Games) == round.GamesPerRound {
+			// This Round is fully scheduled
+			round.IsActive = false
+
+			nextRoundRef := leeg.GetNextRound()
+			if nextRoundRef.ID == "" {
+				// This Leeg is fully scheduled
+				leeg.Scheduled = true
+				leeg.ActiveRound = nextRoundRef
+			} else {
+				// Next round becomes active
+				nextRound, err := leegData.getRoundByID(nextRoundRef.ID)
+				if err != nil {
+					return err
+				}
+				nextRound.IsActive = true
+				err = leegData.saveRound(nextRound)
+				if err != nil {
+					return err
+				}
+				leeg.ActiveRound = nextRoundRef
+			}
+		}
 		err = leegData.saveRound(round)
 		if err != nil {
 			return err
@@ -45,7 +69,6 @@ func (l LeegServices) CreateRandomGame(leegID string, roundID string) (model.Rou
 		if err != nil {
 			return err
 		}
-
 		err = leegData.saveLeeg(leeg)
 		return err
 	})

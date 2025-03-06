@@ -2,7 +2,6 @@ package pages
 
 import (
     "leeg/model"
-    "leeg/views"
     "leeg/views/components"
 	"fmt"
 )
@@ -54,77 +53,9 @@ templ LeegRounds(rounds model.EntityRefList) {
         <span class="flex flex-col items-center m-1">
             <span class="items-center">
                 for _, round := range rounds {
-                    @RoundContainer(round)
+                    @components.RoundContainer(round)
                 }
             </span>
         </span>
-    </span>
-}
-
-templ RoundContainer(round model.EntityRef) {
-     <span class="mx-auto p-3 flex flex-col items-center">
-        @RoundHeader(views.LeegID(ctx), round, false, false)
-        @RoundContent(model.Round{}, round, map[string]model.Game{})
-     </span>
-}
-
-templ RoundHeader(leegID string, round model.EntityRef, showOpen bool, outOfBand bool) {
-    <span id={ fmt.Sprintf("round-%v", round.ID) }
-        if showOpen {
-            class="mx-auto my-2 min-w-[300px] max-w-[550px] p-1 bg-gray-400 white-text-shadow border flex flex-row items-center rounded border-black"
-        } else {
-            class="mx-auto my-2 min-w-[300px] max-w-[550px] p-1 bg-white border flex flex-row items-center rounded border-black"
-        }
-        if outOfBand {
-            hx-swap-oob="true"
-        }
-    >
-        <span class="flex flex-col mx-auto">
-            <span class="mx-4 my-1 text-sm italic"
-                    hx-get={fmt.Sprintf("/leegs/%v/rounds/%v?%v", leegID, round.ID, views.ToggleText(!showOpen))} 
-                    hx-swap="outerHTML"
-                    hx-target={fmt.Sprintf("#round-content-%v", round.ID)}
-            >
-                { round.Text }
-            </span>
-        </span>
-    </span>
-}
-
-templ RoundContent(round model.Round, roundRef model.EntityRef, gamesMap map[string]model.Game) {
-    if round.ID == "" {
-        <span id={fmt.Sprintf("round-content-%v", roundRef.ID)}>
-            @components.Empty()
-        </span>
-    } else {
-        <span id={fmt.Sprintf("round-content-%v", round.ID)}>
-            @Round(round, gamesMap)
-        </span>
-    }
-}
-
-templ Round(round model.Round, gamesMap map[string]model.Game) {
-    <span class="mx-auto max-w-[550px] border flex flex-row items-center rounded border-black">
-        <span class="flex flex-col mx-auto">
-            <span class="mx-auto flex flex-row font-bold">
-                { fmt.Sprintf("Round %v", round.RoundNumber)}
-            </span>
-            @RoundGames(round, gamesMap)
-            @components.RoundControls(round)
-        </span>
-    </span>
-}
-
-templ RoundGames(round model.Round, gamesMap map[string]model.Game) {
-    <ul id={fmt.Sprintf("round-games-%v", round.ID)} class="flex !pl-0 grid grid-cols-6 sm:grid-cols-12">
-        for _, game := range round.Games {
-            @components.Game(round.AsRef(), gamesMap[game.ID])
-        }
-    </ul>
-}
-
-templ CompletedLeegRound(round model.Round) {
-    <span class="w-full mx-4 my-1 text-med">
-        { fmt.Sprintf("Round %v", round.RoundNumber)}
     </span>
 }
