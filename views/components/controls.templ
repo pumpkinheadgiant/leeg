@@ -1,0 +1,52 @@
+package components 
+
+import(
+    "fmt"
+    "leeg/model"
+)
+
+templ Game(round model.EntityRef, game model.Game) {
+    <li id={fmt.Sprintf("game-%v", game.ID)} data-uk-toggle={fmt.Sprintf("target: #edit-game-%v", game.ID)}
+        class="col-span-6 min-w-[210px] flex flex-col p-2 m-2 border rounded-sm border-black">
+        <span class="mx-auto">
+            { fmt.Sprintf("Game %v", game.GameNumber) }
+        </span>
+        <span class="mx-auto">
+            { fmt.Sprintf("%v vs %v", game.TeamA.Text, game.TeamB.Text) }
+        </span>
+        <span class="mx-auto">
+            if game.Winner.ID == "" {
+                Winner: TBD
+            } else {
+                fmt.Sprintf("Winner: %v", game.Winner.Text)
+            }
+        </span>
+        <span id={fmt.Sprintf("edit-game-%v", game.ID)} class="mx-full flex flex-row" hidden>
+            @EditGameDetail(game)
+        </span>
+    </li>
+}
+
+templ EditGameDetail(game model.Game) {
+    Details
+}
+
+templ RoundControls(round model.Round) {
+    <span id={fmt.Sprintf("round-controls-%v", round.ID)} class="w-full flex flex-row gap-3 m-2">
+        if !round.Scheduled() {
+            <span class="uk-button uk-button-default">
+                Record Game
+            </span>
+
+            <span class="uk-button uk-button-default"
+                hx-ext="multi-swap"
+                hx-swap={fmt.Sprintf("multi:#round-games-%v:beforeend,#round-controls-%v:outerHTML", round.ID, round.ID)} 
+                hx-post={fmt.Sprintf("/leegs/%v/rounds/%v/games", round.LeegID, round.ID)}
+            >
+                Request Game
+            </span>
+        } else {
+            Round Scheduled
+        }
+    </span>
+}

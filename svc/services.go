@@ -17,7 +17,7 @@ type LeegService interface {
 	CreateRandomGame(leegID string, roundID string) (model.Round, model.Game, error)
 	GetLeeg(leegID string) (model.Leeg, error)
 	GetLeegs() ([]model.EntityRef, error)
-	GetRound(leegID string, roundID string) (model.Round, error)
+	GetRound(leegID string, roundID string) (model.Round, map[string]model.Game, error)
 }
 
 const LeegsBucketKey = "leegs"

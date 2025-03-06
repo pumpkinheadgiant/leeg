@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"leeg/svc"
-	"leeg/views/pages"
+	"leeg/views/components"
 	"net/http"
 )
 
@@ -23,10 +23,10 @@ func (g GameHandler) HandleGameCreationRequest(w http.ResponseWriter, r *http.Re
 		return hxRedirect(w, r, "/")
 	}
 
-	round, _, err := g.service.CreateRandomGame(leegID, roundID)
+	round, game, err := g.service.CreateRandomGame(leegID, roundID)
 	if err != nil {
 		return err
 	}
 
-	return Render(w, r, pages.Round(round))
+	return Render(w, r, components.GameAndControls(round.AsRef(), game, round))
 }

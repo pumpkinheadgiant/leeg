@@ -1,0 +1,16 @@
+package components
+
+import (
+    "fmt"
+    "leeg/model"
+)
+
+templ GameAndControls(round model.EntityRef, game model.Game, fullRound model.Round) {
+    <div id={fmt.Sprintf("round-games-%v", round.ID)} hx-swap-oob="beforeend">
+        @Game(round, game)
+    </div>
+
+    <div id={fmt.Sprintf("round-controls-%v", round.ID)} hx-swap-oob="outerHTML">
+        @RoundControls(fullRound)
+    </div>
+}

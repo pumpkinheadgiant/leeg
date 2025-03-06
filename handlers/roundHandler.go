@@ -25,24 +25,24 @@ func (rh RoundHandler) HandleGetRound(w http.ResponseWriter, r *http.Request) er
 	}
 	open := r.URL.Query().Get("open") == "true"
 
-	round, err := rh.service.GetRound(leegID, roundID)
+	round, games, err := rh.service.GetRound(leegID, roundID)
 	if err != nil {
 		return err
 	}
 	if open {
 		if round.IsActive {
-			err = Render(w, r, pages.RoundContent(round, round.AsRef()))
+			err = Render(w, r, pages.RoundContent(round, round.AsRef(), games))
 			if err != nil {
 				return err
 			}
 			return Render(w, r, pages.RoundHeader(leegID, round.AsRef(), open, true))
 		} else {
 			w.Header().Set("Leeg-Message", fmt.Sprintf("Round %v is not yet active", round.RoundNumber))
-			w.Header().Set("Leeg-Status", "warning")
-			return Render(w, r, pages.RoundContent(model.Round{}, round.AsRef()))
+			w.Header().Set("Leeg-Status", "gray")
+			return Render(w, r, pages.RoundContent(model.Round{}, round.AsRef(), map[string]model.Game{}))
 		}
 	} else {
-		err := Render(w, r, pages.RoundContent(model.Round{}, round.AsRef()))
+		err := Render(w, r, pages.RoundContent(model.Round{}, round.AsRef(), map[string]model.Game{}))
 		if err != nil {
 			return err
 		}

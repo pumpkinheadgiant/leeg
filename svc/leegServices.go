@@ -27,7 +27,6 @@ func (l LeegServices) CreateRandomGame(leegID string, roundID string) (model.Rou
 		}
 
 		gameNumber := len(round.Games) + 1
-
 		game, round.UnplayedTeams, err = newRandomMatchup(gameNumber, round.RoundNumber, round.UnplayedTeams, leeg.MatchupMap, l.Rando)
 		if err != nil {
 			return err
@@ -200,15 +199,16 @@ func (b LeegServices) CreateLeeg(request model.LeegCreateRequest) (model.EntityR
 		if err != nil {
 			return err
 		}
-
 		leegRef = newLeeg.AsRef()
 		return nil
 	})
 }
 
-func (b LeegServices) GetRound(leegID string, roundID string) (model.Round, error) {
+func (b LeegServices) GetRound(leegID string, roundID string) (model.Round, map[string]model.Game, error) {
 	var round model.Round
-	return round, b.Db.View(func(tx *bbolt.Tx) error {
+	var gamesByIDMap = map[string]model.Game{}
+
+	return round, gamesByIDMap, b.Db.View(func(tx *bbolt.Tx) error {
 		leegData, err := b.DataForLeeg(tx, leegID)
 		if err != nil {
 			return err
@@ -217,7 +217,18 @@ func (b LeegServices) GetRound(leegID string, roundID string) (model.Round, erro
 		if roundBytes == nil {
 			return fmt.Errorf("couldn't locate round with id '%v'", roundID)
 		}
-		return json.Unmarshal(roundBytes, &round)
+		err = json.Unmarshal(roundBytes, &round)
+		if err != nil {
+			return err
+		}
+		for _, gameRef := range round.Games {
+			game, err := leegData.getGameByID(gameRef.ID)
+			if err != nil {
+				return err
+			}
+			gamesByIDMap[game.ID] = game
+		}
+		return nil
 	})
 }
 

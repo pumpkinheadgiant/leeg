@@ -42,6 +42,19 @@ func (l LeegData) getGameByID(id string) (model.Game, error) {
 	return game, json.Unmarshal(gameBytes, &game)
 }
 
+func (l LeegData) getGameByIDMapForRound(round model.Round) (map[string]model.Game, error) {
+	var gamesByIDMap = map[string]model.Game{}
+	for _, game := range round.Games {
+		game, err := l.getGameByID(game.ID)
+		if err != nil {
+			return gamesByIDMap, err
+		}
+		gamesByIDMap[game.ID] = game
+	}
+
+	return gamesByIDMap, nil
+}
+
 func (l LeegData) saveLeeg(leeg model.Leeg) error {
 
 	return nil
