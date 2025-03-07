@@ -7,14 +7,36 @@ import (
 	"go.etcd.io/bbolt"
 )
 
-type LeegData struct {
+type LeegDAO struct {
 	Leeg         model.Leeg
 	RoundsBucket *bbolt.Bucket
 	DataBucket   *bbolt.Bucket
 	GamesBucket  *bbolt.Bucket
 }
 
-func (l LeegData) saveGame(game model.Game) error {
+func (l LeegDAO) updateGamesForRenamedTeam(teamRef model.EntityRef) ([]model.Game, error) {
+
+	var updatedGames = []model.Game{}
+
+	gamesCursor := l.GamesBucket.Cursor()
+	var game = model.Game{}
+
+	for key, value := gamesCursor.First(); key != nil; key, value = gamesCursor.Next() {
+		err := json.Unmarshal(value, &game)
+		if err != nil {
+			return updatedGames, err
+		}
+		if game.RenameTeam(teamRef) {
+			updatedGames = append(updatedGames, game)
+			err = l.saveGame(game)
+			if err != nil {
+				return updatedGames, err
+			}
+		}
+	}
+	return updatedGames, nil
+}
+func (l LeegDAO) saveGame(game model.Game) error {
 	gameBytes, err := json.Marshal(game)
 	if err != nil {
 		return err
@@ -22,7 +44,7 @@ func (l LeegData) saveGame(game model.Game) error {
 	return l.GamesBucket.Put([]byte(game.ID), gameBytes)
 }
 
-func (l LeegData) saveRound(round model.Round) error {
+func (l LeegDAO) saveRound(round model.Round) error {
 	roundBytes, err := json.Marshal(round)
 	if err != nil {
 		return err
@@ -30,19 +52,19 @@ func (l LeegData) saveRound(round model.Round) error {
 	return l.RoundsBucket.Put([]byte(round.ID), roundBytes)
 }
 
-func (l LeegData) getRoundByID(id string) (model.Round, error) {
+func (l LeegDAO) getRoundByID(id string) (model.Round, error) {
 	var round model.Round
 	roundBytes := l.RoundsBucket.Get([]byte(id))
 	return round, json.Unmarshal(roundBytes, &round)
 }
 
-func (l LeegData) getGameByID(id string) (model.Game, error) {
+func (l LeegDAO) getGameByID(id string) (model.Game, error) {
 	var game model.Game
 	gameBytes := l.GamesBucket.Get([]byte(id))
 	return game, json.Unmarshal(gameBytes, &game)
 }
 
-func (l LeegData) getGameByIDMapForRound(round model.Round) (map[string]model.Game, error) {
+func (l LeegDAO) getGameByIDMapForRound(round model.Round) (map[string]model.Game, error) {
 	var gamesByIDMap = map[string]model.Game{}
 	for _, game := range round.Games {
 		game, err := l.getGameByID(game.ID)
@@ -55,7 +77,7 @@ func (l LeegData) getGameByIDMapForRound(round model.Round) (map[string]model.Ga
 	return gamesByIDMap, nil
 }
 
-func (l LeegData) saveLeeg(leeg model.Leeg) error {
+func (l LeegDAO) saveLeeg(leeg model.Leeg) error {
 	leegBytes, err := json.Marshal(leeg)
 	if err != nil {
 		return err
