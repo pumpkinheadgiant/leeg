@@ -6,43 +6,71 @@ import (
     "leeg/views"
 )
 
-templ Game(round model.EntityRef, game model.Game, editing bool) {
+templ Team(team model.Team, outOfBand bool) {
+    <li id={fmt.Sprintf("team-%v", team.ID)} 
+        if outOfBand {
+            hx-swap-oob="true"
+        }
+        class="mx-auto min-w-[300px] max-w-[500px] my-2 font-bold border bg-white rounded border-black">
+        <span class="w-full flex flex-row m-2">
+            <span class="w-full flex flex-col items-end">
+                <span class="mr-3">{ team.Name }</span>
+            </span>
+            <span class="w-full flex flex-col items-start">
+                <span class="ml-3">{ fmt.Sprintf("%v/%v", team.Wins(), team.Losses()) }</span>
+            </span>
+        </span>
+    </li>
+}
+
+templ Game(game model.Game, editing bool) {
     <span id={fmt.Sprintf("game-%v", game.ID)}
-        hx-get={fmt.Sprintf("/leegs/%v/rounds/%v/games/%v?%v", views.LeegID(ctx), round.ID, game.ID, views.ToggleEdit(editing))}
-        hx-target={fmt.Sprintf("#game-%v", game.ID)}
-        hx-swap="outerHTML"
-        class="col-span-6 min-w-[210px] flex flex-col p-2 m-2 border rounded-sm border-black">
-        <span class="mx-auto">
-            { fmt.Sprintf("Game %v", game.GameNumber) }
+        class="col-span-6 min-w-[210px] flex flex-col p-2 m-2 bg-white border rounded-sm border-black">
+
+        <span class="mx-auto flex flex-col" 
+            if !game.Complete() {
+                hx-get={fmt.Sprintf("/leegs/%v/rounds/%v/games/%v?%v", views.LeegID(ctx), views.RoundID(ctx), game.ID, views.ToggleEdit(editing))}
+                hx-target={fmt.Sprintf("#game-%v", game.ID)} hx-swap="outerHTML"    
+            }
+        >
+            <span class="mx-auto">
+                { fmt.Sprintf("Game %v", game.GameNumber) }
+            </span>
+            <span class="mx-auto">
+                { fmt.Sprintf("%v vs %v", game.TeamA.Text, game.TeamB.Text) }
+            </span>
+            if !editing {
+                <span class="mx-auto">
+                    if game.Winner.ID == "" {
+                        Winner: TBD
+                    } else {
+                        {fmt.Sprintf("Winner: %v", game.Winner.Text)}
+                    }
+                </span>
+            }
         </span>
-        <span class="mx-auto">
-            { fmt.Sprintf("%v vs %v", game.TeamA.Text, game.TeamB.Text) }
-        </span>
+        
         if editing {
-            <span class="mx-auto">
-                EDITING
-            </span>
+            <form class="mx-auto" hx-swap="outerHTML" hx-target={fmt.Sprintf("#game-%v", game.ID)}
+                    hx-put={fmt.Sprintf("/leegs/%v/rounds/%v/games/%v", views.LeegID(ctx), views.RoundID(ctx), game.ID )}>
+                <label class="uk-form-label" for="winner">Winner</label>
+                <select name="winner">
+                    <option value={game.TeamA.ID}>{game.TeamA.Text}</option>
+                    <option value={game.TeamB.ID}>{game.TeamB.Text}</option>
+                </select>
+                <button>go</button>
+            </form>
         } else {
-            <span class="mx-auto">
-                if game.Winner.ID == "" {
-                    Winner: TBD
-                } else {
-                    fmt.Sprintf("Winner: %v", game.Winner.Text)
-                }
-            </span>
+           
         }
     </span>
 }
 
 
 templ RoundControls(round model.Round) {
-    <span id={fmt.Sprintf("round-controls-%v", round.ID)} class="w-full flex flex-row gap-3 m-2">
+    <span id={fmt.Sprintf("round-controls-%v", round.ID)} class="w-full mx-auto flex flex-row m-2">
         if !round.Scheduled() {
-            <span class="uk-button uk-button-default">
-                Record Game
-            </span>
-
-            <span class="uk-button uk-button-default"
+            <span class="mx-auto"
                 hx-ext="multi-swap"
                 hx-swap={fmt.Sprintf("multi:#round-games-%v:beforeend,#round-controls-%v:outerHTML", round.ID, round.ID)} 
                 hx-post={fmt.Sprintf("/leegs/%v/rounds/%v/games", round.LeegID, round.ID)}
@@ -50,7 +78,9 @@ templ RoundControls(round model.Round) {
                 Request Game
             </span>
         } else {
-            Round Scheduled
+            <span class="mx-auto">
+                Round Scheduled
+            </span>
         }
     </span>
 }
@@ -98,7 +128,7 @@ templ RoundContent(round model.Round, roundRef model.EntityRef, gamesMap map[str
 }
 
 templ Round(round model.Round, gamesMap map[string]model.Game) {
-    <span class="mx-auto max-w-[550px] border flex flex-row items-center rounded border-black">
+    <span class="mx-auto min-w-[454px] max-w-[550px] border flex flex-row items-center rounded border-black">
         <span class="flex flex-col mx-auto">
             <span class="mx-auto flex flex-row font-bold">
                 { fmt.Sprintf("Round %v", round.RoundNumber)}
@@ -112,7 +142,7 @@ templ Round(round model.Round, gamesMap map[string]model.Game) {
 templ RoundGames(round model.Round, gamesMap map[string]model.Game) {
     <span id={fmt.Sprintf("round-games-%v", round.ID)} class="flex !pl-0 grid grid-cols-6 sm:grid-cols-12">
         for _, game := range round.Games {
-            @Game(round.AsRef(), gamesMap[game.ID], false)
+            @Game(gamesMap[game.ID], false)
         }
     </span>
 }

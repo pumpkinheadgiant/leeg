@@ -5,9 +5,9 @@ import (
     "leeg/model"
 )
 
-templ GameAndControls(roundRef model.EntityRef, game model.Game, round model.Round) {
-    <div id={fmt.Sprintf("round-games-%v", roundRef.ID)} hx-swap-oob="beforeend">
-        @Game(roundRef, game, false)
+templ GameAndControls(game model.Game, round model.Round) {
+    <div id={fmt.Sprintf("round-games-%v", round.ID)} hx-swap-oob="beforeend">
+        @Game( game, false)
     </div>
 
     <div id={fmt.Sprintf("round-controls-%v", round.ID)} hx-swap-oob="outerHTML">

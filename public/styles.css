@@ -670,6 +670,14 @@ video {
   min-width: 500px;
 }
 
+.min-w-\[400px\] {
+  min-width: 400px;
+}
+
+.min-w-\[454px\] {
+  min-width: 454px;
+}
+
 .max-w-\[500px\] {
   max-width: 500px;
 }

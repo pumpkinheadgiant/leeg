@@ -6,15 +6,15 @@ import (
 )
 
 type Leeg struct {
-	ID             string        `json:"id"`
-	Name           string        `json:"name"`
-	TeamDescriptor string        `json:"teamDescriptor"`
-	Teams          []Team        `json:"teams"`
-	Rounds         EntityRefList `json:"rounds"`
-	ImageURL       string        `json:"imageURL"`
-	MatchupMap     MatchupMap    `json:"matchupMap"`
-	ActiveRound    EntityRef     `json:"activeRound"`
-	Scheduled      bool          `json:"scheduled"`
+	ID             string          `json:"id"`
+	Name           string          `json:"name"`
+	TeamDescriptor string          `json:"teamDescriptor"`
+	TeamsMap       map[string]Team `json:"teams"`
+	Rounds         EntityRefList   `json:"rounds"`
+	ImageURL       string          `json:"imageURL"`
+	MatchupMap     MatchupMap      `json:"matchupMap"`
+	ActiveRound    EntityRef       `json:"activeRound"`
+	Scheduled      bool            `json:"scheduled"`
 }
 
 func (l Leeg) AsRef() EntityRef {
@@ -26,7 +26,7 @@ func (l Leeg) TotalRounds() int {
 }
 
 func (l Leeg) GamesPerRound() int {
-	return len(l.Teams) / 2
+	return len(l.TeamsMap) / 2
 }
 
 func (l Leeg) GetNextRound() EntityRef {
@@ -78,14 +78,6 @@ type Round struct {
 
 func (r Round) Scheduled() bool {
 	return len(r.Games) == r.GamesPerRound
-}
-
-func (r Round) GenerateMatchup(seasonMatchups map[string]EntityRefList) (Game, error) {
-	var newGame = Game{}
-
-	// teamsPlayedThisRound := r.TeamsPlayed
-
-	return newGame, nil
 }
 
 func (r Round) AsRef() EntityRef {
@@ -166,3 +158,9 @@ func (m *MatchupMap) RecordMatchup(game Game) error {
 }
 
 type ContextKey struct{}
+
+type Nav struct {
+	LeegID  string
+	RoundID string
+	GameID  string
+}

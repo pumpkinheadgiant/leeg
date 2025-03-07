@@ -3,13 +3,12 @@ package pages
 import (
     "leeg/model"
     "leeg/views/components"
-	"fmt"
 )
 
 templ LeegPage(leeg model.Leeg){
     @Base() {
         @LeegHeader(leeg)
-        @LeegTeams(leeg.Teams)
+        @LeegTeams(leeg.TeamsMap)
         @LeegRounds(leeg.Rounds)
     }
 }
@@ -23,29 +22,16 @@ templ LeegHeader(leeg model.Leeg) {
     </span>
 }
 
-templ LeegTeams(teams []model.Team) {
+templ LeegTeams(teams map[string]model.Team) {
     <span class="w-full flex flex-row">
         <span class="w-full flex flex-col pt-3">
             <ul class="w-full pl-4 pr-4">
                 for _, team := range teams {
-                    @LeegTeam(team)
+                    @components.Team(team, false)
                 }
             </ul>
         </span>
     </span>
-}
-
-templ LeegTeam(team model.Team) {
-    <li id={fmt.Sprintf("team-%v", team.ID)} class="mx-auto min-w-[300px] max-w-[500px] my-2 font-bold border bg-white rounded border-black">
-        <span class="w-full flex flex-row m-2">
-            <span class="w-full flex flex-col items-end">
-                <span class="mr-3">{ team.Name }</span>
-            </span>
-            <span class="w-full flex flex-col items-start">
-                <span class="ml-3">{ fmt.Sprintf("%v/%v", team.Wins(), team.Losses()) }</span>
-            </span>
-        </span>
-    </li>
 }
 
 templ LeegRounds(rounds model.EntityRefList) {

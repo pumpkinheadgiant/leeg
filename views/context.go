@@ -6,8 +6,16 @@ import (
 )
 
 func LeegID(ctx context.Context) string {
-	if leegID, exists := ctx.Value(model.ContextKey{}).(string); exists {
-		return leegID
+	if nav, exists := ctx.Value(model.ContextKey{}).(model.Nav); exists {
+		return nav.LeegID
+	} else {
+		return ""
+	}
+}
+
+func RoundID(ctx context.Context) string {
+	if nav, exists := ctx.Value(model.ContextKey{}).(model.Nav); exists {
+		return nav.RoundID
 	} else {
 		return ""
 	}
