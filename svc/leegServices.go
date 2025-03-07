@@ -11,6 +11,35 @@ import (
 	"go.etcd.io/bbolt"
 )
 
+func (l LeegServices) RenameTeam(leegID string, teamID string, name string) (model.Team, []model.Game, bool, error) {
+
+	var team model.Team
+	var games []model.Game
+	var available = false
+	return team, games, available, l.Db.View(func(tx *bbolt.Tx) error {
+		leegDAO, err := l.DataForLeeg(tx, leegID)
+		if err != nil {
+			return err
+		}
+		leeg := leegDAO.Leeg
+		available = leeg.TeamsMap.NameAvailable(teamID, name)
+		if !available {
+			return nil
+		}
+		team, err = leeg.TeamsMap.RenameTeam(teamID, name)
+		if err != nil {
+			return err
+		}
+
+		games, err = leegDAO.updateGamesForRenamedTeam(team.AsRef())
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
 func (l LeegServices) ResolveGame(leegID string, gameID string, winnerID string) (model.Game, []model.Team, error) {
 	var game model.Game
 	var teams []model.Team
@@ -151,8 +180,8 @@ func newRandomMatchup(gameNumber int, roundNumber int, eligibleTeams model.Entit
 	return game, eligibleTeams, nil
 }
 
-func (b LeegServices) DataForLeeg(tx *bbolt.Tx, leegID string) (LeegData, error) {
-	leegData := LeegData{}
+func (b LeegServices) DataForLeeg(tx *bbolt.Tx, leegID string) (LeegDAO, error) {
+	leegData := LeegDAO{}
 
 	leegsBucket := tx.Bucket([]byte(LeegsBucketKey))
 	if leegsBucket == nil {

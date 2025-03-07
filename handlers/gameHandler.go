@@ -30,7 +30,7 @@ func (g GameHandler) HandleGetGame(w http.ResponseWriter, r *http.Request) error
 
 	ctx := context.WithValue(r.Context(), model.ContextKey{}, nav)
 
-	return Render(w, r.WithContext(ctx), components.Game(game, !editing))
+	return Render(w, r.WithContext(ctx), components.Game(game, !editing, false))
 }
 
 func (g GameHandler) HandleGameUpdate(w http.ResponseWriter, r *http.Request) error {
@@ -59,7 +59,7 @@ func (g GameHandler) HandleGameUpdate(w http.ResponseWriter, r *http.Request) er
 	nav := model.Nav{LeegID: leegID, RoundID: roundID}
 	ctx := context.WithValue(r.Context(), model.ContextKey{}, nav)
 
-	err = Render(w, r.WithContext(ctx), components.Game(game, false))
+	err = Render(w, r.WithContext(ctx), components.Game(game, false, false))
 	if err != nil {
 		return err
 	}

@@ -6,15 +6,15 @@ import (
 )
 
 type Leeg struct {
-	ID             string          `json:"id"`
-	Name           string          `json:"name"`
-	TeamDescriptor string          `json:"teamDescriptor"`
-	TeamsMap       map[string]Team `json:"teams"`
-	Rounds         EntityRefList   `json:"rounds"`
-	ImageURL       string          `json:"imageURL"`
-	MatchupMap     MatchupMap      `json:"matchupMap"`
-	ActiveRound    EntityRef       `json:"activeRound"`
-	Scheduled      bool            `json:"scheduled"`
+	ID             string        `json:"id"`
+	Name           string        `json:"name"`
+	TeamDescriptor string        `json:"teamDescriptor"`
+	TeamsMap       TeamsMap      `json:"teams"`
+	Rounds         EntityRefList `json:"rounds"`
+	ImageURL       string        `json:"imageURL"`
+	MatchupMap     MatchupMap    `json:"matchupMap"`
+	ActiveRound    EntityRef     `json:"activeRound"`
+	Scheduled      bool          `json:"scheduled"`
 }
 
 func (l Leeg) AsRef() EntityRef {
@@ -46,6 +46,41 @@ func (l Leeg) getCurrentRoundIdx() int {
 	return -1
 }
 
+type TeamsMap map[string]Team
+
+func (t TeamsMap) NameAvailable(teamID string, name string) bool {
+	for _, team := range t {
+		if team.Name == name && team.ID != teamID {
+			return false
+		}
+	}
+	return true
+}
+
+func (t *TeamsMap) RenameTeam(teamID string, name string) (Team, error) {
+	var updatedTeam Team
+	for _, existingTeam := range *t {
+		if existingTeam.ID == teamID {
+			existingTeam.Name = name
+			(*t)[teamID] = existingTeam
+			updatedTeam = existingTeam
+			break
+		}
+	}
+	if updatedTeam.ID == "" {
+		return Team{}, fmt.Errorf("no team with ID %v in leeg", teamID)
+	}
+	updatedRef := updatedTeam.AsRef()
+
+	for _, existingTeam := range *t {
+		if existingTeam.ID != teamID {
+			existingTeam.TeamsDefeated = existingTeam.TeamsDefeated.Update(updatedRef)
+			existingTeam.TeamsDefeatedBy = existingTeam.TeamsDefeatedBy.Update(updatedRef)
+		}
+	}
+	return updatedTeam, nil
+}
+
 type Team struct {
 	ID              string        `json:"id"`
 	Name            string        `json:"name"`
@@ -64,6 +99,12 @@ func (t Team) Losses() int {
 
 func (t Team) AsRef() EntityRef {
 	return EntityRef{ID: t.ID, Text: t.Name, ImageURL: t.ImageURL, Type: TEAM}
+}
+
+type TeamUpdateRequest struct {
+	LeegID string
+	TeamID string
+	Name   string
 }
 
 type Round struct {
@@ -104,6 +145,17 @@ func (g Game) AsRef() EntityRef {
 		outcome = fmt.Sprintf("Winner: %v", g.Winner.Text)
 	}
 	return EntityRef{ID: g.ID, Text: fmt.Sprintf("Game %v. %v vs %v. Winner: %v", g.GameNumber, g.TeamA.Text, g.TeamB.Text, outcome)}
+}
+
+func (g *Game) RenameTeam(teamRef EntityRef) bool {
+	if g.TeamA.ID == teamRef.ID {
+		g.TeamA = teamRef
+		return true
+	} else if g.TeamB.ID == teamRef.ID {
+		g.TeamB = teamRef
+		return true
+	}
+	return false
 }
 
 type LeegStatus struct {
