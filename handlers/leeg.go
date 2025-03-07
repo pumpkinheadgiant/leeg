@@ -37,6 +37,8 @@ func (l *LeegApp) Init() error {
 	leegHandler := LeegHandler{services}
 	gameHandler := GameHandler{services}
 	roundHandler := RoundHandler{services}
+	teamHandler := TeamHandler{services}
+
 	router := chi.NewMux()
 	router.Handle("/*", publicHandler())
 
@@ -50,6 +52,7 @@ func (l *LeegApp) Init() error {
 	router.Put("/leegs/{leegID}/rounds/{roundID}/games/{gameID}", Make(gameHandler.HandleGameUpdate))
 	router.Get("/leegs/{leegID}/rounds/{roundID}", Make(roundHandler.HandleGetRound))
 
+	router.Put("/leegs/{leegID}/teams/{teamID}", Make(teamHandler.HandleTeamUpdate))
 	l.router = router
 	return nil
 }
