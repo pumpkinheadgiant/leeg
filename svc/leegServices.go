@@ -11,6 +11,60 @@ import (
 	"go.etcd.io/bbolt"
 )
 
+func (l LeegServices) ResolveGame(leegID string, gameID string, winnerID string) (model.Game, []model.Team, error) {
+	var game model.Game
+	var teams []model.Team
+	return game, teams, l.Db.Update(func(tx *bbolt.Tx) error {
+		leegDAO, err := l.DataForLeeg(tx, leegID)
+		if err != nil {
+			return err
+		}
+		leeg := leegDAO.Leeg
+
+		game, err = leegDAO.getGameByID(gameID)
+		if err != nil {
+			return err
+		}
+		teamA := leeg.TeamsMap[game.TeamA.ID]
+		teamB := leeg.TeamsMap[game.TeamB.ID]
+
+		teamAWins := teamA.ID == winnerID
+		if teamAWins {
+			teamA.TeamsDefeated = append(teamA.TeamsDefeated, teamB.AsRef())
+			teamB.TeamsDefeatedBy = append(teamB.TeamsDefeatedBy, teamA.AsRef())
+			game.Winner = teamA.AsRef()
+		} else {
+			teamA.TeamsDefeatedBy = append(teamA.TeamsDefeatedBy, teamB.AsRef())
+			teamB.TeamsDefeated = append(teamB.TeamsDefeated, teamA.AsRef())
+			game.Winner = teamB.AsRef()
+		}
+
+		err = leegDAO.saveGame(game)
+		if err != nil {
+			return err
+		}
+
+		leeg.TeamsMap[teamA.ID] = teamA
+		leeg.TeamsMap[teamB.ID] = teamB
+		teams = append(teams, teamA, teamB)
+		return leegDAO.saveLeeg(leeg)
+	})
+}
+
+func (l LeegServices) GetGame(leegID string, roundID string, gameID string) (model.Game, error) {
+	var game model.Game
+	return game, l.Db.View(func(tx *bbolt.Tx) error {
+		leegDAO, err := l.DataForLeeg(tx, leegID)
+		if err != nil {
+			return err
+		}
+
+		game, err = leegDAO.getGameByID(gameID)
+		return err
+
+	})
+}
+
 func (l LeegServices) CreateRandomGame(leegID string, roundID string) (model.Round, model.Game, error) {
 	var game model.Game
 	var round model.Round
@@ -167,7 +221,7 @@ func (b LeegServices) CreateLeeg(request model.LeegCreateRequest) (model.EntityR
 			return err
 		}
 
-		var teams = []model.Team{}
+		var teamsMap = map[string]model.Team{}
 		var allTeamsList = model.EntityRefList{}
 
 		for i := range request.TeamCount {
@@ -175,7 +229,7 @@ func (b LeegServices) CreateLeeg(request model.LeegCreateRequest) (model.EntityR
 				ID:   model.NewId(),
 				Name: fmt.Sprintf("%v %v", request.TeamDescriptor, i+1),
 			}
-			teams = append(teams, team)
+			teamsMap[team.ID] = team
 			allTeamsList = append(allTeamsList, team.AsRef())
 		}
 
@@ -183,7 +237,7 @@ func (b LeegServices) CreateLeeg(request model.LeegCreateRequest) (model.EntityR
 			ID:             newLeegID,
 			Name:           request.Name,
 			TeamDescriptor: request.TeamDescriptor,
-			Teams:          teams,
+			TeamsMap:       teamsMap,
 			MatchupMap:     model.MatchupMap{},
 		}
 

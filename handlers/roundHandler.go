@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"leeg/model"
 	"leeg/svc"
@@ -24,29 +25,31 @@ func (rh RoundHandler) HandleGetRound(w http.ResponseWriter, r *http.Request) er
 		return hxRedirect(w, r, "/")
 	}
 	open := r.URL.Query().Get("open") == "true"
+	nav := model.Nav{LeegID: leegID, RoundID: roundID}
+	ctx := context.WithValue(r.Context(), model.ContextKey{}, nav)
 
 	round, games, err := rh.service.GetRound(leegID, roundID)
 	if err != nil {
 		return err
 	}
 	if open {
-		if round.IsActive {
-			err = Render(w, r, components.RoundContent(round, round.AsRef(), games))
+		if round.IsActive || round.Scheduled() {
+			err = Render(w, r.WithContext(ctx), components.RoundContent(round, round.AsRef(), games))
 			if err != nil {
 				return err
 			}
-			return Render(w, r, components.RoundHeader(leegID, round.AsRef(), open, true))
+			return Render(w, r.WithContext(ctx), components.RoundHeader(leegID, round.AsRef(), open, true))
 		} else {
 			w.Header().Set("Leeg-Message", fmt.Sprintf("Round %v is not yet active", round.RoundNumber))
 			w.Header().Set("Leeg-Status", "gray")
-			return Render(w, r, components.RoundContent(model.Round{}, round.AsRef(), map[string]model.Game{}))
+			return Render(w, r.WithContext(ctx), components.RoundContent(model.Round{}, round.AsRef(), map[string]model.Game{}))
 		}
 	} else {
-		err := Render(w, r, components.RoundContent(model.Round{}, round.AsRef(), map[string]model.Game{}))
+		err := Render(w, r.WithContext(ctx), components.RoundContent(model.Round{}, round.AsRef(), map[string]model.Game{}))
 		if err != nil {
 			return err
 		}
-		return Render(w, r, components.RoundHeader(leegID, round.AsRef(), open, true))
+		return Render(w, r.WithContext(ctx), components.RoundHeader(leegID, round.AsRef(), open, true))
 	}
 
 }
