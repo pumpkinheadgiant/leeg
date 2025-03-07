@@ -165,6 +165,4 @@ func (m *MatchupMap) RecordMatchup(game Game) error {
 	return nil
 }
 
-type ContextKey struct {
-	ID string
-}
+type ContextKey struct{}

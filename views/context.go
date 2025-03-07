@@ -13,10 +13,18 @@ func LeegID(ctx context.Context) string {
 	}
 }
 
-func ToggleText(showOpen bool) string {
+func ToggleOpen(showOpen bool) string {
 	if showOpen {
 		return "open=true"
 	} else {
 		return "open=false"
+	}
+}
+
+func ToggleEdit(edit bool) string {
+	if edit {
+		return "edit=true"
+	} else {
+		return "edit=false"
 	}
 }

@@ -558,6 +558,14 @@ video {
   position: static;
 }
 
+.absolute {
+  position: absolute;
+}
+
+.inset-0 {
+  inset: 0px;
+}
+
 .col-span-3 {
   grid-column: span 3 / span 3;
 }
@@ -754,6 +762,10 @@ video {
 .bg-white {
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+}
+
+.bg-opacity-75 {
+  --tw-bg-opacity: 0.75;
 }
 
 .p-1 {

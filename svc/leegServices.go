@@ -11,6 +11,25 @@ import (
 	"go.etcd.io/bbolt"
 )
 
+func (l LeegServices) GetGame(leegID string, roundID string, gameID string) (model.Round, model.Game, error) {
+	var round model.Round
+	var game model.Game
+	return round, game, l.Db.View(func(tx *bbolt.Tx) error {
+		leegDAO, err := l.DataForLeeg(tx, leegID)
+		if err != nil {
+			return err
+		}
+
+		round, err = leegDAO.getRoundByID(roundID)
+		if err != nil {
+			return err
+		}
+
+		game, err = leegDAO.getGameByID(gameID)
+		return err
+
+	})
+}
 func (l LeegServices) CreateRandomGame(leegID string, roundID string) (model.Round, model.Game, error) {
 	var game model.Game
 	var round model.Round

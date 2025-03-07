@@ -1,13 +1,16 @@
 package components 
 
-import(
+import (
     "fmt"
     "leeg/model"
     "leeg/views"
 )
 
-templ Game(round model.EntityRef, game model.Game) {
-    <li id={fmt.Sprintf("game-%v", game.ID)} data-uk-toggle={fmt.Sprintf("target: #edit-game-%v", game.ID)}
+templ Game(round model.EntityRef, game model.Game, editing bool) {
+    <span id={fmt.Sprintf("game-%v", game.ID)}
+        hx-get={fmt.Sprintf("/leegs/%v/rounds/%v/games/%v?%v", views.LeegID(ctx), round.ID, game.ID, views.ToggleEdit(editing))}
+        hx-target={fmt.Sprintf("#game-%v", game.ID)}
+        hx-swap="outerHTML"
         class="col-span-6 min-w-[210px] flex flex-col p-2 m-2 border rounded-sm border-black">
         <span class="mx-auto">
             { fmt.Sprintf("Game %v", game.GameNumber) }
@@ -15,22 +18,22 @@ templ Game(round model.EntityRef, game model.Game) {
         <span class="mx-auto">
             { fmt.Sprintf("%v vs %v", game.TeamA.Text, game.TeamB.Text) }
         </span>
-        <span class="mx-auto">
-            if game.Winner.ID == "" {
-                Winner: TBD
-            } else {
-                fmt.Sprintf("Winner: %v", game.Winner.Text)
-            }
-        </span>
-        <span id={fmt.Sprintf("edit-game-%v", game.ID)} class="mx-full flex flex-row" hidden>
-            @EditGameDetail(game)
-        </span>
-    </li>
+        if editing {
+            <span class="mx-auto">
+                EDITING
+            </span>
+        } else {
+            <span class="mx-auto">
+                if game.Winner.ID == "" {
+                    Winner: TBD
+                } else {
+                    fmt.Sprintf("Winner: %v", game.Winner.Text)
+                }
+            </span>
+        }
+    </span>
 }
 
-templ EditGameDetail(game model.Game) {
-    Details
-}
 
 templ RoundControls(round model.Round) {
     <span id={fmt.Sprintf("round-controls-%v", round.ID)} class="w-full flex flex-row gap-3 m-2">
@@ -72,7 +75,7 @@ templ RoundHeader(leegID string, round model.EntityRef, showOpen bool, outOfBand
     >
         <span class="flex flex-col mx-auto">
             <span class="mx-4 my-1 text-sm italic"
-                    hx-get={fmt.Sprintf("/leegs/%v/rounds/%v?%v", leegID, round.ID, views.ToggleText(!showOpen))} 
+                    hx-get={fmt.Sprintf("/leegs/%v/rounds/%v?%v", leegID, round.ID, views.ToggleOpen(!showOpen))} 
                     hx-swap="outerHTML"
                     hx-target={fmt.Sprintf("#round-content-%v", round.ID)}
             >
@@ -107,11 +110,11 @@ templ Round(round model.Round, gamesMap map[string]model.Game) {
 }
 
 templ RoundGames(round model.Round, gamesMap map[string]model.Game) {
-    <ul id={fmt.Sprintf("round-games-%v", round.ID)} class="flex !pl-0 grid grid-cols-6 sm:grid-cols-12">
+    <span id={fmt.Sprintf("round-games-%v", round.ID)} class="flex !pl-0 grid grid-cols-6 sm:grid-cols-12">
         for _, game := range round.Games {
-            @Game(round.AsRef(), gamesMap[game.ID])
+            @Game(round.AsRef(), gamesMap[game.ID], false)
         }
-    </ul>
+    </span>
 }
 
 templ CompletedLeegRound(round model.Round) {
