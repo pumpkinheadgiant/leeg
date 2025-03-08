@@ -64,19 +64,6 @@ func (l LeegDAO) getGameByID(id string) (model.Game, error) {
 	return game, json.Unmarshal(gameBytes, &game)
 }
 
-func (l LeegDAO) getGameByIDMapForRound(round model.Round) (map[string]model.Game, error) {
-	var gamesByIDMap = map[string]model.Game{}
-	for _, game := range round.Games {
-		game, err := l.getGameByID(game.ID)
-		if err != nil {
-			return gamesByIDMap, err
-		}
-		gamesByIDMap[game.ID] = game
-	}
-
-	return gamesByIDMap, nil
-}
-
 func (l LeegDAO) saveLeeg(leeg model.Leeg) error {
 	leegBytes, err := json.Marshal(leeg)
 	if err != nil {
