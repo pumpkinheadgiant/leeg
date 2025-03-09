@@ -11,22 +11,22 @@ import (
 	"go.etcd.io/bbolt"
 )
 
-func (l LeegServices) RenameTeam(leegID string, teamID string, name string) (model.Team, []model.Game, bool, error) {
+func (l LeegServices) RenameTeam(update model.TeamUpdateRequest) (model.Team, []model.Game, bool, error) {
 
 	var team model.Team
 	var games []model.Game
 	var available = false
 	return team, games, available, l.Db.Update(func(tx *bbolt.Tx) error {
-		leegDAO, err := l.DataForLeeg(tx, leegID)
+		leegDAO, err := l.DataForLeeg(tx, update.LeegID)
 		if err != nil {
 			return err
 		}
 		leeg := leegDAO.Leeg
-		available = leeg.TeamsMap.NameAvailable(teamID, name)
+		available = leeg.TeamsMap.NameAvailable(update.TeamID, update.Name)
 		if !available {
 			return nil
 		}
-		team, err = leeg.TeamsMap.RenameTeam(teamID, name)
+		team, err = leeg.TeamsMap.RenameTeam(update.TeamID, update.Name)
 		if err != nil {
 			return err
 		}
