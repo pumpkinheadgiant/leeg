@@ -30,18 +30,20 @@ func (t TeamHandler) HandleTeamUpdate(w http.ResponseWriter, r *http.Request) er
 	nav := model.Nav{LeegID: leegID}
 	ctx := context.WithValue(r.Context(), model.ContextKey{}, nav)
 
-	teamRequest := model.TeamUpdateRequest{LeegID: leegID, TeamID: teamID}
+	teamRequest := model.TeamUpdateRequest{LeegID: leegID, TeamID: teamID, Name: name}
 
 	if name == "" {
+		w.WriteHeader(http.StatusBadRequest)
 		errors := map[string]string{"name": "name cannot be empty"}
 		return Render(w, r.WithContext(ctx), forms.TeamForm(teamRequest, errors, false, false))
 	}
 
-	team, games, nameAvailable, err := t.service.RenameTeam(leegID, teamID, name)
+	team, games, nameAvailable, err := t.service.RenameTeam(teamRequest)
 	if err != nil {
 		return err
 	}
 	if !nameAvailable {
+		w.WriteHeader(http.StatusBadRequest)
 		errors := map[string]string{"name": "name is in use"}
 		return Render(w, r.WithContext(ctx), forms.TeamForm(teamRequest, errors, false, false))
 	}
