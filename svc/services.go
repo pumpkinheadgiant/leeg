@@ -19,7 +19,7 @@ type LeegService interface {
 	GetLeeg(leegID string) (model.Leeg, error)
 	GetLeegs() ([]model.EntityRef, error)
 	GetRound(leegID string, roundID string) (model.Round, map[string]model.Game, error)
-	RenameTeam(update model.TeamUpdateRequest) (model.Team, []model.Game, bool, error)
+	RenameTeam(leegID string, gameID string, winnerID string) (model.Team, []model.Game, bool, error)
 	ResolveGame(leegID string, gameID string, winnerID string) (model.Game, []model.Team, error)
 }
 
