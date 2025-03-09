@@ -18,3 +18,6 @@ browse:
 
 test:
 	@go test ./model
+
+delete:
+	@rm -f data/leeg.db

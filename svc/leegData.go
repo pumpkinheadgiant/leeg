@@ -34,6 +34,19 @@ func (l LeegDAO) updateGamesForRenamedTeam(teamRef model.EntityRef) ([]model.Gam
 			}
 		}
 	}
+
+	for _, roundRef := range l.Leeg.Rounds {
+		round, err := l.getRoundByID(roundRef.ID)
+		if err != nil {
+			return updatedGames, err
+		}
+		round.UnplayedTeams = round.UnplayedTeams.Update(teamRef)
+		err = l.saveRound(round)
+		if err != nil {
+			return updatedGames, err
+		}
+
+	}
 	return updatedGames, nil
 }
 func (l LeegDAO) saveGame(game model.Game) error {
