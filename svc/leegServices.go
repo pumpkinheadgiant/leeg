@@ -16,7 +16,7 @@ func (l LeegServices) RenameTeam(leegID string, teamID string, name string) (mod
 	var team model.Team
 	var games []model.Game
 	var available = false
-	return team, games, available, l.Db.View(func(tx *bbolt.Tx) error {
+	return team, games, available, l.Db.Update(func(tx *bbolt.Tx) error {
 		leegDAO, err := l.DataForLeeg(tx, leegID)
 		if err != nil {
 			return err
@@ -35,8 +35,7 @@ func (l LeegServices) RenameTeam(leegID string, teamID string, name string) (mod
 		if err != nil {
 			return err
 		}
-
-		return nil
+		return leegDAO.saveLeeg(leeg)
 	})
 }
 

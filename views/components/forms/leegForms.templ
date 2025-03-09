@@ -7,7 +7,7 @@ import(
 
 templ TeamForm(values model.TeamUpdateRequest, errors map[string]string, hidden bool, outOfBand bool) {
     <form id={fmt.Sprintf("team-form-%v", values.TeamID)} class="mx-auto mt-2 grid grid-cols-6"
-                hx-post={fmt.Sprintf("/leegs/%v/teams/%v", values.LeegID, values.TeamID)}
+                hx-put={fmt.Sprintf("/leegs/%v/teams/%v", values.LeegID, values.TeamID)}
                 hx-target={fmt.Sprintf("#team-%v", values.TeamID)}
                 hx-swap="outerHTML"
                 hx-target-4**={fmt.Sprintf("#team-form-%v", values.TeamID)}

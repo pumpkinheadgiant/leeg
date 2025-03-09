@@ -34,6 +34,19 @@ func (l LeegDAO) updateGamesForRenamedTeam(teamRef model.EntityRef) ([]model.Gam
 			}
 		}
 	}
+
+	for _, roundRef := range l.Leeg.Rounds {
+		round, err := l.getRoundByID(roundRef.ID)
+		if err != nil {
+			return updatedGames, err
+		}
+		round.UnplayedTeams = round.UnplayedTeams.Update(teamRef)
+		err = l.saveRound(round)
+		if err != nil {
+			return updatedGames, err
+		}
+
+	}
 	return updatedGames, nil
 }
 func (l LeegDAO) saveGame(game model.Game) error {
@@ -62,19 +75,6 @@ func (l LeegDAO) getGameByID(id string) (model.Game, error) {
 	var game model.Game
 	gameBytes := l.GamesBucket.Get([]byte(id))
 	return game, json.Unmarshal(gameBytes, &game)
-}
-
-func (l LeegDAO) getGameByIDMapForRound(round model.Round) (map[string]model.Game, error) {
-	var gamesByIDMap = map[string]model.Game{}
-	for _, game := range round.Games {
-		game, err := l.getGameByID(game.ID)
-		if err != nil {
-			return gamesByIDMap, err
-		}
-		gamesByIDMap[game.ID] = game
-	}
-
-	return gamesByIDMap, nil
 }
 
 func (l LeegDAO) saveLeeg(leeg model.Leeg) error {

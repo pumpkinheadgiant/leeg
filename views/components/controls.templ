@@ -4,6 +4,7 @@ import (
     "fmt"
     "leeg/model"
     "leeg/views"
+    "leeg/views/components/forms"
 )
 
 templ Team(team model.Team, outOfBand bool) {
@@ -13,22 +14,27 @@ templ Team(team model.Team, outOfBand bool) {
         }
         class="mx-auto min-w-[300px] max-w-[500px] my-2 font-bold border bg-white rounded border-black">
         <span class="w-full flex flex-row m-2">
-            <span class="w-full flex flex-col items-end">
+            <span class="w-full flex flex-col items-end" data-uk-toggle={fmt.Sprintf("target: #team-form-%v", team.ID)}>
                 <span class="mr-3">{ team.Name }</span>
             </span>
             <span class="w-full flex flex-col items-start">
                 <span class="ml-3">{ fmt.Sprintf("%v/%v", team.Wins(), team.Losses()) }</span>
             </span>
         </span>
+        <span id={fmt.Sprintf("team-form-%v", team.ID)} class="text-sm" hidden>
+            @forms.TeamForm(model.TeamUpdateRequest{LeegID: views.LeegID(ctx), TeamID: team.ID, Name: team.Name}, map[string]string{}, true, false)
+        </span>
     </li>
 }
 
 templ Game(game model.Game, editing bool, outOfBand bool) {
     <span id={fmt.Sprintf("game-%v", game.ID)}
-        class="col-span-6 min-w-[210px] flex flex-col p-2 m-2 bg-white border rounded-sm border-black">
-        if outOfBand {
+        class="col-span-6 min-w-[210px] flex flex-col p-2 m-2 bg-white border rounded-sm border-black"
+         if outOfBand {
             hx-swap-oob="true"
         }
+        >
+       
         <span class="mx-auto flex flex-col" 
             if !game.Complete() {
                 hx-get={fmt.Sprintf("/leegs/%v/rounds/%v/games/%v?%v", views.LeegID(ctx), views.RoundID(ctx), game.ID, views.ToggleEdit(editing))}
