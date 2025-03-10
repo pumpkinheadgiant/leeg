@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -35,6 +36,39 @@ func (l Leeg) GetNextRound() EntityRef {
 		return EntityRef{}
 	}
 	return l.Rounds[currentRoundIdx+1]
+}
+
+func (l Leeg) GetRankedTeamsList() EntityRefList {
+	teamsList := EntityRefList{}
+
+	type kv struct {
+		Key   string
+		Value Team
+	}
+	var ss []kv
+	for k, v := range l.TeamsMap {
+		ss = append(ss, kv{Key: k, Value: v})
+	}
+
+	sort.Slice(ss, func(i, j int) bool {
+
+		teamA := ss[i].Value
+		teamB := ss[j].Value
+		if teamA.Wins() == teamB.Wins() {
+			if teamA.Losses() == teamB.Losses() {
+				return teamA.Name < teamB.Name
+			} else {
+				return teamA.Losses() < teamB.Losses()
+			}
+		}
+		return teamA.Wins() > teamB.Wins()
+	})
+
+	for _, team := range ss {
+		teamsList = append(teamsList, team.Value.AsRef())
+	}
+
+	return teamsList
 }
 
 func (l Leeg) getCurrentRoundIdx() int {
@@ -198,12 +232,6 @@ type LeegPageData struct {
 type MatchupMap map[string]EntityRefList
 
 func (m *MatchupMap) RecordMatchup(game Game) error {
-	var teamAMatchups = (*m)[game.TeamA.ID]
-	var teamBMatchups = (*m)[game.TeamB.ID]
-
-	if teamAMatchups.HasID(game.TeamB.ID) || teamBMatchups.HasID(game.TeamA.ID) {
-		return fmt.Errorf("%v and %v have already played", game.TeamA.Text, game.TeamB.Text)
-	}
 	(*m)[game.TeamA.ID] = append((*m)[game.TeamA.ID], game.TeamB)
 	(*m)[game.TeamB.ID] = append((*m)[game.TeamB.ID], game.TeamA)
 	return nil

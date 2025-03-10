@@ -3,12 +3,13 @@ package pages
 import (
     "leeg/model"
     "leeg/views/components"
+	"fmt"
 )
 
 templ LeegPage(leeg model.Leeg){
     @Base() {
         @LeegHeader(leeg)
-        @LeegTeams(leeg.TeamsMap)
+        @LeegTeams(leeg.TeamsMap, leeg.GetRankedTeamsList())
         @LeegRounds(leeg.Rounds)
     }
 }
@@ -22,17 +23,28 @@ templ LeegHeader(leeg model.Leeg) {
     </span>
 }
 
-templ LeegTeams(teams map[string]model.Team) {
+templ LeegTeams(teams map[string]model.Team, rankedTeams model.EntityRefList) {
     <span class="w-full flex flex-row">
-        <span class="w-full flex flex-col pt-3">
+        <span class="w-full flex flex-col pt-3 items-center">
             <ul class="w-full pl-4 pr-4">
-                for _, team := range teams {
-                    @components.Team(team, false)
+
+                for _, rankedTeam := range rankedTeams {
+                    @components.Team(teams[rankedTeam.ID], false)
                 }
             </ul>
+            <span class="flex flex-row align-center items-center">
+                <span class="mx-auto w-[200px] uk-button uk-button-default"
+                        hx-put={fmt.Sprintf("/leegs/{leegID}/sort")}
+                        hx-target={fmt.Sprintf("")}
+                        >
+                    Sort
+                </span>
+            </span>
         </span>
     </span>
 }
+
+
 
 templ LeegRounds(rounds model.EntityRefList) {
     <span class="mx-auto min-w-[500px] max-w-[600px]flex flex-row">

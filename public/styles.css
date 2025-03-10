@@ -610,6 +610,10 @@ video {
   margin-top: 0.5rem;
 }
 
+.ms-auto {
+  margin-inline-start: auto;
+}
+
 .flex {
   display: flex;
 }
@@ -648,6 +652,10 @@ video {
 
 .w-screen {
   width: 100vw;
+}
+
+.w-\[200px\] {
+  width: 200px;
 }
 
 .min-w-\[210px\] {
