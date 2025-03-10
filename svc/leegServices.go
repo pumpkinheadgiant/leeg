@@ -17,7 +17,7 @@ func (l LeegServices) RenameTeam(update model.TeamUpdateRequest) (model.Team, []
 	var games []model.Game
 	var available = false
 	return team, games, available, l.Db.Update(func(tx *bbolt.Tx) error {
-		leegDAO, err := l.DataForLeeg(tx, update.LeegID)
+		leegDAO, err := l.GetLeegDAO(tx, update.LeegID)
 		if err != nil {
 			return err
 		}
@@ -43,7 +43,7 @@ func (l LeegServices) ResolveGame(leegID string, gameID string, winnerID string)
 	var game model.Game
 	var teams []model.Team
 	return game, teams, l.Db.Update(func(tx *bbolt.Tx) error {
-		leegDAO, err := l.DataForLeeg(tx, leegID)
+		leegDAO, err := l.GetLeegDAO(tx, leegID)
 		if err != nil {
 			return err
 		}
@@ -82,7 +82,7 @@ func (l LeegServices) ResolveGame(leegID string, gameID string, winnerID string)
 func (l LeegServices) GetGame(leegID string, roundID string, gameID string) (model.Game, error) {
 	var game model.Game
 	return game, l.Db.View(func(tx *bbolt.Tx) error {
-		leegDAO, err := l.DataForLeeg(tx, leegID)
+		leegDAO, err := l.GetLeegDAO(tx, leegID)
 		if err != nil {
 			return err
 		}
@@ -97,13 +97,13 @@ func (l LeegServices) CreateRandomGame(leegID string, roundID string) (model.Rou
 	var game model.Game
 	var round model.Round
 	return round, game, l.Db.Update(func(tx *bbolt.Tx) error {
-		leegData, err := l.DataForLeeg(tx, leegID)
+		leegDAO, err := l.GetLeegDAO(tx, leegID)
 		if err != nil {
 			return err
 		}
-		leeg := leegData.Leeg
+		leeg := leegDAO.Leeg
 
-		round, err = leegData.getRoundByID(roundID)
+		round, err = leegDAO.getRoundByID(roundID)
 		if err != nil {
 			return err
 		}
@@ -113,7 +113,7 @@ func (l LeegServices) CreateRandomGame(leegID string, roundID string) (model.Rou
 		if err != nil {
 			return err
 		}
-		err = leegData.saveGame(game)
+		err = leegDAO.saveGame(game)
 		if err != nil {
 			return err
 		}
@@ -131,19 +131,19 @@ func (l LeegServices) CreateRandomGame(leegID string, roundID string) (model.Rou
 				leeg.ActiveRound = nextRoundRef
 			} else {
 				// Next round becomes active
-				nextRound, err := leegData.getRoundByID(nextRoundRef.ID)
+				nextRound, err := leegDAO.getRoundByID(nextRoundRef.ID)
 				if err != nil {
 					return err
 				}
 				nextRound.IsActive = true
-				err = leegData.saveRound(nextRound)
+				err = leegDAO.saveRound(nextRound)
 				if err != nil {
 					return err
 				}
 				leeg.ActiveRound = nextRoundRef
 			}
 		}
-		err = leegData.saveRound(round)
+		err = leegDAO.saveRound(round)
 		if err != nil {
 			return err
 		}
@@ -151,7 +151,7 @@ func (l LeegServices) CreateRandomGame(leegID string, roundID string) (model.Rou
 		if err != nil {
 			return err
 		}
-		err = leegData.saveLeeg(leeg)
+		err = leegDAO.saveLeeg(leeg)
 		return err
 	})
 }
@@ -161,7 +161,8 @@ func newRandomMatchup(gameNumber int, roundNumber int, eligibleTeams model.Entit
 	if len(eligibleTeams) < 2 {
 		return game, eligibleTeams, errors.New("must have at least two eligible teams to match")
 	}
-	for game.TeamA.ID == "" || game.TeamB.ID == "" || game.TeamA.ID == game.TeamB.ID || leegMatchupMap[game.TeamA.ID].HasID(game.TeamB.ID) {
+	attempts := 1
+	for game.TeamA.ID == "" || game.TeamB.ID == "" || game.TeamA.ID == game.TeamB.ID || leegMatchupMap[game.TeamA.ID].HasID(game.TeamB.ID) && attempts < len(eligibleTeams) {
 		teamA, err := rando.RandomEntity(eligibleTeams)
 		if err != nil {
 			return game, eligibleTeams, err
@@ -172,54 +173,56 @@ func newRandomMatchup(gameNumber int, roundNumber int, eligibleTeams model.Entit
 		}
 		game.TeamA = teamA
 		game.TeamB = teamB
+		attempts++
 	}
+
 	eligibleTeams = eligibleTeams.Remove(game.TeamA.ID)
 	eligibleTeams = eligibleTeams.Remove(game.TeamB.ID)
 
 	return game, eligibleTeams, nil
 }
 
-func (b LeegServices) DataForLeeg(tx *bbolt.Tx, leegID string) (LeegDAO, error) {
-	leegData := LeegDAO{}
+func (b LeegServices) GetLeegDAO(tx *bbolt.Tx, leegID string) (LeegDAO, error) {
+	leegDAO := LeegDAO{}
 
 	leegsBucket := tx.Bucket([]byte(LeegsBucketKey))
 	if leegsBucket == nil {
-		return leegData, errors.New("failed to load leegs bucket")
+		return leegDAO, errors.New("failed to load leegs bucket")
 	}
 
 	leegBucket := leegsBucket.Bucket([]byte(leegID))
 	if leegsBucket == nil {
-		return leegData, fmt.Errorf("failed to load leeg bucket with id %v", leegID)
+		return leegDAO, fmt.Errorf("failed to load leeg bucket with id %v", leegID)
 	}
 	leegDataBucket := leegBucket.Bucket([]byte(dataBucketKey))
 	if leegDataBucket == nil {
-		return leegData, errors.New("failed to retrieve leeg data bucket")
+		return leegDAO, errors.New("failed to retrieve leeg data bucket")
 	}
-	leegData.DataBucket = leegDataBucket
+	leegDAO.DataBucket = leegDataBucket
 
 	var leeg model.Leeg
 	var leegBytes = leegDataBucket.Get([]byte(leegDataID))
 	if leegBytes == nil {
-		return leegData, errors.New("failed to retrieve leeg data bytes")
+		return leegDAO, errors.New("failed to retrieve leeg data bytes")
 	}
 	err := json.Unmarshal(leegBytes, &leeg)
 	if err != nil {
-		return leegData, err
+		return leegDAO, err
 	}
-	leegData.Leeg = leeg
+	leegDAO.Leeg = leeg
 
 	roundsBucket := leegBucket.Bucket([]byte(roundsBucketKey))
 	if roundsBucket == nil {
-		return leegData, errors.New("failed to load rounds bucket for leeg")
+		return leegDAO, errors.New("failed to load rounds bucket for leeg")
 	}
-	leegData.RoundsBucket = roundsBucket
+	leegDAO.RoundsBucket = roundsBucket
 
 	gameBucket := leegBucket.Bucket([]byte(gamesBucketKey))
 	if gameBucket == nil {
-		return leegData, errors.New("failed to load games bucket for leeg")
+		return leegDAO, errors.New("failed to load games bucket for leeg")
 	}
-	leegData.GamesBucket = gameBucket
-	return leegData, nil
+	leegDAO.GamesBucket = gameBucket
+	return leegDAO, nil
 }
 
 func (b LeegServices) CreateLeeg(request model.LeegCreateRequest) (model.EntityRef, error) {
@@ -314,11 +317,11 @@ func (b LeegServices) GetRound(leegID string, roundID string) (model.Round, map[
 	var gamesByIDMap = map[string]model.Game{}
 
 	return round, gamesByIDMap, b.Db.View(func(tx *bbolt.Tx) error {
-		leegData, err := b.DataForLeeg(tx, leegID)
+		leegDAO, err := b.GetLeegDAO(tx, leegID)
 		if err != nil {
 			return err
 		}
-		roundBytes := leegData.RoundsBucket.Get([]byte(roundID))
+		roundBytes := leegDAO.RoundsBucket.Get([]byte(roundID))
 		if roundBytes == nil {
 			return fmt.Errorf("couldn't locate round with id '%v'", roundID)
 		}
@@ -327,7 +330,7 @@ func (b LeegServices) GetRound(leegID string, roundID string) (model.Round, map[
 			return err
 		}
 		for _, gameRef := range round.Games {
-			game, err := leegData.getGameByID(gameRef.ID)
+			game, err := leegDAO.getGameByID(gameRef.ID)
 			if err != nil {
 				return err
 			}
@@ -341,11 +344,11 @@ func (b LeegServices) GetLeeg(leegID string) (model.Leeg, error) {
 	var leeg model.Leeg
 
 	return leeg, b.Db.View(func(tx *bbolt.Tx) error {
-		leegData, err := b.DataForLeeg(tx, leegID)
+		leegDAO, err := b.GetLeegDAO(tx, leegID)
 		if err != nil {
 			return err
 		}
-		leeg = leegData.Leeg
+		leeg = leegDAO.Leeg
 		return nil
 	})
 }
