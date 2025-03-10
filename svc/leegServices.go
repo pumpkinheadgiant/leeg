@@ -162,7 +162,7 @@ func newRandomMatchup(gameNumber int, roundNumber int, eligibleTeams model.Entit
 		return game, eligibleTeams, errors.New("must have at least two eligible teams to match")
 	}
 	attempts := 1
-	for game.TeamA.ID == "" || game.TeamB.ID == "" || game.TeamA.ID == game.TeamB.ID || leegMatchupMap[game.TeamA.ID].HasID(game.TeamB.ID) && attempts < len(eligibleTeams) {
+	for game.TeamA.ID == "" || game.TeamB.ID == "" || game.TeamA.ID == game.TeamB.ID || leegMatchupMap[game.TeamA.ID].HasID(game.TeamB.ID) && attempts < len(eligibleTeams)*2 {
 		teamA, err := rando.RandomEntity(eligibleTeams)
 		if err != nil {
 			return game, eligibleTeams, err
