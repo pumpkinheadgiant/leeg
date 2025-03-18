@@ -88,21 +88,29 @@ templ Game(game model.Game, editing bool, outOfBand bool) {
 
 
 templ RoundControls(round model.Round) {
-    <span id={fmt.Sprintf("round-controls-%v", round.ID)} class="w-full mx-auto flex flex-row m-2">
-        if !round.Scheduled() {
-            <span class="mx-auto"
-                hx-ext="multi-swap"
-                hx-swap={fmt.Sprintf("multi:#round-games-%v:beforeend,#round-controls-%v:outerHTML", round.ID, round.ID)} 
-                hx-post={fmt.Sprintf("/leegs/%v/rounds/%v/games", round.LeegID, round.ID)}
-            >
-                Request Game
-            </span>
-        } else {
-            <span class="mx-auto">
-                Round Scheduled
-            </span>
-        }
+    <span id={fmt.Sprintf("round-controls-%v", round.ID)} class="w-full mx-auto flex flex-col m-2">
+        <span class="w-full mx-auto flex flex-row m-2">
+            if !round.Scheduled() {
+                <span class="mx-auto" data-uk-toggle={fmt.Sprintf("#game-form-%v", round.ID)}>
+                    Record Game
+                </span>
+                
+                <span class="mx-auto"
+                    hx-ext="multi-swap"
+                    hx-swap={fmt.Sprintf("multi:#round-games-%v:beforeend,#round-controls-%v:outerHTML", round.ID, round.ID)} 
+                    hx-post={fmt.Sprintf("/leegs/%v/rounds/%v/games", round.LeegID, round.ID)}
+                >
+                    Request Game
+                </span>
+            } else {
+                <span class="mx-auto">
+                    Round Scheduled
+                </span>
+            }
+        </span>
+        @forms.GameForm(round.LeegID, round.ID, round.AllTeams, "","",map[string]string{}, true, false)
     </span>
+    
 }
 
 templ RoundContainer(round model.EntityRef) {

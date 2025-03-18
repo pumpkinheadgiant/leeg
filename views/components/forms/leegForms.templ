@@ -30,6 +30,41 @@ templ TeamForm(values model.TeamUpdateRequest, errors map[string]string, hidden 
     </form>
 }
 
+templ GameForm(leegID string, roundID string, teams model.EntityRefList, teamA string, teamB string, errors map[string]string, hidden bool, outOfBand bool) {
+    <form id={fmt.Sprintf("game-form-%v", roundID)}
+            class="min-w-[210px] mx-auto m-2 bg-white border rounded-sm border-black grid grid-cols-6"
+            hx-post={fmt.Sprintf("/leegs/%v/rounds/%v/games", leegID, roundID)}
+            hx-target-4**={fmt.Sprintf("#game-form-%v", roundID)}
+            hx-ext="multi-swap response-targets"
+            hidden?={hidden}
+            hx-swap={fmt.Sprintf("multi:#round-games-%v:beforeend,#round-controls-%v:outerHTML", roundID, roundID)}    
+            if outOfBand {
+                hx-swap-oob="true"
+            } 
+    >
+        <select name="teamA" class="col-span-3">
+            for _, team := range teams {
+                <option value={team.ID} selected?={ teamA == team.ID }>
+                    {team.Text}
+                </option>
+            }
+        </select>
+        <select name="teamB" class="col-span-3">
+            for _, team := range teams {
+                <option value={team.ID} selected?={team.ID == teamA && teamA != ""}>
+                    {team.Text}
+                </option>
+            }
+        </select>
+        if errors["teamB"] != "" {
+           <span class="text-red-500 text-xs col-span-6">
+                { errors["teamB"]}
+            </span>
+        }
+        <button>go</button>
+    </form>
+}
+
 templ LeegForm(values model.LeegCreateRequest, errors map[string]string, hidden bool, outOfBand bool) {
     <form id="new-leeg-form" class="mx-auto mt-2 grid grid-cols-6"
                 hx-post="/leegs"

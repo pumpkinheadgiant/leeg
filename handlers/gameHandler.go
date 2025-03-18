@@ -5,6 +5,7 @@ import (
 	"leeg/model"
 	"leeg/svc"
 	"leeg/views/components"
+	"leeg/views/components/forms"
 	"net/http"
 )
 
@@ -19,7 +20,6 @@ func (g GameHandler) HandleGetGame(w http.ResponseWriter, r *http.Request) error
 	editing := r.URL.Query().Get("edit") == "true"
 
 	if leegID == "" || gameID == "" || roundID == "" {
-		w.WriteHeader(http.StatusNotFound)
 		return hxRedirect(w, r, "/")
 	}
 	game, err := g.service.GetGame(leegID, roundID, gameID)
@@ -28,7 +28,7 @@ func (g GameHandler) HandleGetGame(w http.ResponseWriter, r *http.Request) error
 	}
 	nav := model.Nav{LeegID: leegID, RoundID: roundID}
 
-	ctx := context.WithValue(r.Context(), model.ContextKey{}, nav)
+	ctx := context.WithValue(r.Context(), model.NavContextKey{}, nav)
 
 	return Render(w, r.WithContext(ctx), components.Game(game, !editing, false))
 }
@@ -39,7 +39,6 @@ func (g GameHandler) HandleGameUpdate(w http.ResponseWriter, r *http.Request) er
 	gameID := r.PathValue("gameID")
 
 	if leegID == "" || gameID == "" || roundID == "" {
-		w.WriteHeader(http.StatusNotFound)
 		return hxRedirect(w, r, "/")
 	}
 
@@ -49,7 +48,6 @@ func (g GameHandler) HandleGameUpdate(w http.ResponseWriter, r *http.Request) er
 	}
 	winnerID := r.FormValue("winner")
 	if winnerID == "" {
-		w.WriteHeader(http.StatusNotFound)
 		return hxRedirect(w, r, "/")
 	}
 	game, teams, err := g.service.ResolveGame(leegID, gameID, winnerID)
@@ -57,7 +55,7 @@ func (g GameHandler) HandleGameUpdate(w http.ResponseWriter, r *http.Request) er
 		return err
 	}
 	nav := model.Nav{LeegID: leegID, RoundID: roundID}
-	ctx := context.WithValue(r.Context(), model.ContextKey{}, nav)
+	ctx := context.WithValue(r.Context(), model.NavContextKey{}, nav)
 
 	err = Render(w, r.WithContext(ctx), components.Game(game, false, false))
 	if err != nil {
@@ -76,23 +74,46 @@ func (g GameHandler) HandleGameUpdate(w http.ResponseWriter, r *http.Request) er
 func (g GameHandler) HandleGameCreationRequest(w http.ResponseWriter, r *http.Request) error {
 	leegID := r.PathValue("leegID")
 	if leegID == "" {
-		w.WriteHeader(http.StatusNotFound)
 		return hxRedirect(w, r, "/")
 	}
 
 	roundID := r.PathValue("roundID")
 	if roundID == "" {
-		w.WriteHeader(http.StatusNotFound)
 		return hxRedirect(w, r, "/")
 	}
 
-	round, game, err := g.service.CreateRandomGame(leegID, roundID)
+	err := r.ParseForm()
 	if err != nil {
 		return err
 	}
+	var round model.Round
+	var game model.Game
 
 	nav := model.Nav{LeegID: leegID, RoundID: roundID}
-	ctx := context.WithValue(r.Context(), model.ContextKey{}, nav)
+	ctx := context.WithValue(r.Context(), model.NavContextKey{}, nav)
+
+	teamA := r.FormValue("teamA")
+	teamB := r.FormValue("teamB")
+
+	if teamA == "" {
+		round, game, err = g.service.CreateRandomGame(leegID, roundID)
+		if err != nil {
+			return err
+		}
+	} else {
+		if teamA == teamB {
+			teams, err := g.service.GetTeams(leegID)
+			if err != nil {
+				return err
+			}
+			w.WriteHeader(http.StatusBadRequest)
+			return Render(w, r.WithContext(ctx), forms.GameForm(leegID, roundID, teams, teamA, teamB, map[string]string{"teamB": "a team can't play itself"}, false, false))
+		}
+		round, game, err = g.service.RecordMatchup(leegID, roundID, teamA, teamB)
+		if err != nil {
+			return err
+		}
+	}
 
 	return Render(w, r.WithContext(ctx), components.GameAndControls(game, round))
 }

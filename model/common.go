@@ -11,6 +11,15 @@ type EntityRef struct {
 
 type EntityRefList []EntityRef
 
+func (e EntityRefList) WithID(id string) EntityRef {
+	for _, entity := range e {
+		if entity.ID == id {
+			return entity
+		}
+	}
+	return EntityRef{}
+}
+
 func (e EntityRefList) HasID(id string) bool {
 	for _, entity := range e {
 		if entity.ID == id {
@@ -19,6 +28,7 @@ func (e EntityRefList) HasID(id string) bool {
 	}
 	return false
 }
+
 func (e EntityRefList) Diff(oe EntityRefList) EntityRefList {
 	diffList := EntityRefList{}
 

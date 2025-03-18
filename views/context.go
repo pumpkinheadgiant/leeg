@@ -6,7 +6,7 @@ import (
 )
 
 func LeegID(ctx context.Context) string {
-	if nav, exists := ctx.Value(model.ContextKey{}).(model.Nav); exists {
+	if nav, exists := ctx.Value(model.NavContextKey{}).(model.Nav); exists {
 		return nav.LeegID
 	} else {
 		return ""
@@ -14,7 +14,7 @@ func LeegID(ctx context.Context) string {
 }
 
 func RoundID(ctx context.Context) string {
-	if nav, exists := ctx.Value(model.ContextKey{}).(model.Nav); exists {
+	if nav, exists := ctx.Value(model.NavContextKey{}).(model.Nav); exists {
 		return nav.RoundID
 	} else {
 		return ""

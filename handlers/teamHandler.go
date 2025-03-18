@@ -19,7 +19,6 @@ func (t TeamHandler) HandleTeamUpdate(w http.ResponseWriter, r *http.Request) er
 	teamID := r.PathValue("teamID")
 
 	if leegID == "" || teamID == "" {
-		w.WriteHeader(http.StatusNotFound)
 		return hxRedirect(w, r, "/")
 	}
 	err := r.ParseForm()
@@ -28,7 +27,7 @@ func (t TeamHandler) HandleTeamUpdate(w http.ResponseWriter, r *http.Request) er
 	}
 	name := strings.TrimSpace(r.FormValue("name"))
 	nav := model.Nav{LeegID: leegID}
-	ctx := context.WithValue(r.Context(), model.ContextKey{}, nav)
+	ctx := context.WithValue(r.Context(), model.NavContextKey{}, nav)
 
 	teamRequest := model.TeamUpdateRequest{LeegID: leegID, TeamID: teamID, Name: name}
 
@@ -38,7 +37,7 @@ func (t TeamHandler) HandleTeamUpdate(w http.ResponseWriter, r *http.Request) er
 		return Render(w, r.WithContext(ctx), forms.TeamForm(teamRequest, errors, false, false))
 	}
 
-	team, games, nameAvailable, err := t.service.RenameTeam(teamRequest)
+	team, games, activeRound, nameAvailable, err := t.service.RenameTeam(teamRequest)
 	if err != nil {
 		return err
 	}
@@ -57,5 +56,6 @@ func (t TeamHandler) HandleTeamUpdate(w http.ResponseWriter, r *http.Request) er
 			return err
 		}
 	}
-	return nil
+
+	return Render(w, r.WithContext(ctx), forms.GameForm(leegID, activeRound.ID, activeRound.AllTeams, "", "", map[string]string{}, true, true))
 }

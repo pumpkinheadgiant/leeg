@@ -26,6 +26,16 @@ func (l Leeg) TotalRounds() int {
 	return len(l.Rounds)
 }
 
+func (l Leeg) TeamList() EntityRefList {
+	allTeams := EntityRefList{}
+	for _, team := range l.TeamsMap {
+		allTeams = append(allTeams, team.AsRef())
+	}
+	sort.Slice(allTeams, func(i, j int) bool {
+		return allTeams[i].Text > allTeams[j].Text
+	})
+	return allTeams
+}
 func (l Leeg) GamesPerRound() int {
 	return len(l.TeamsMap) / 2
 }
@@ -51,7 +61,6 @@ func (l Leeg) GetRankedTeamsList() EntityRefList {
 	}
 
 	sort.Slice(ss, func(i, j int) bool {
-
 		teamA := ss[i].Value
 		teamB := ss[j].Value
 		if teamA.Wins() == teamB.Wins() {
@@ -98,6 +107,7 @@ func (t *TeamsMap) RenameTeam(teamID string, name string) (Team, error) {
 			existingTeam.Name = name
 			(*t)[teamID] = existingTeam
 			updatedTeam = existingTeam
+
 			break
 		}
 	}
@@ -148,6 +158,7 @@ type Round struct {
 	Games         EntityRefList `json:"games"`
 	IsActive      bool          `json:"isActive"`
 	GamesPerRound int           `json:"gamesPerRound"`
+	AllTeams      EntityRefList `json:"allTeams"`
 	UnplayedTeams EntityRefList `json:"unplayedTeams"`
 }
 
@@ -237,7 +248,7 @@ func (m *MatchupMap) RecordMatchup(game Game) error {
 	return nil
 }
 
-type ContextKey struct{}
+type NavContextKey struct{}
 
 type Nav struct {
 	LeegID  string
