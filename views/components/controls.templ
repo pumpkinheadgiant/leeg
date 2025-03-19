@@ -158,9 +158,9 @@ templ RoundContent(round model.Round, roundRef model.EntityRef, gamesMap map[str
 templ Round(round model.Round, gamesMap map[string]model.Game) {
     <span class="mx-auto min-w-[454px] max-w-[550px] border flex flex-row items-center rounded border-black">
         <span class="flex flex-col mx-auto">
-            <span class="mx-auto flex flex-row font-bold">
-                { fmt.Sprintf("Round %v", round.RoundNumber)}
-            </span>
+            // <span class="mx-auto flex flex-row font-bold">
+            //     { fmt.Sprintf("Round %v", round.RoundNumber)}
+            // </span>
             @RoundGames(round, gamesMap)
             @RoundControls(round)
         </span>
