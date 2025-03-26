@@ -51,11 +51,11 @@ func (t TeamHandler) HandleTeamUpdate(w http.ResponseWriter, r *http.Request) er
 		return err
 	}
 	for _, game := range games {
-		err = Render(w, r.WithContext(ctx), components.Game(game, false, true))
+		err = Render(w, r.WithContext(ctx), components.Game(game, activeRound.AllTeams, false, true))
 		if err != nil {
 			return err
 		}
 	}
 
-	return Render(w, r.WithContext(ctx), forms.GameForm(leegID, activeRound.ID, activeRound.AllTeams, "", "", map[string]string{}, true, true))
+	return Render(w, r.WithContext(ctx), forms.RecordGameForm(leegID, activeRound.ID, activeRound.AllTeams, "", "", map[string]string{}, true, true))
 }

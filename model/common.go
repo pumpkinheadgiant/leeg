@@ -39,7 +39,7 @@ func (e EntityRefList) Diff(oe EntityRefList) EntityRefList {
 	}
 	return diffList
 }
-func (e EntityRefList) Remove(id string) EntityRefList {
+func (e EntityRefList) RemoveAll(id string) EntityRefList {
 	newEntities := EntityRefList{}
 	for _, ref := range e {
 		if ref.ID != id {
@@ -48,6 +48,20 @@ func (e EntityRefList) Remove(id string) EntityRefList {
 	}
 	return newEntities
 }
+
+func (e EntityRefList) RemoveFirst(id string) EntityRefList {
+	newEntities := EntityRefList{}
+	removedOne := false
+	for _, ref := range e {
+		if ref.ID != id || removedOne {
+			newEntities = append(newEntities, ref)
+		} else if !removedOne {
+			removedOne = true
+		}
+	}
+	return newEntities
+}
+
 func (e EntityRefList) Update(entity EntityRef) EntityRefList {
 	newEntities := EntityRefList{}
 	for _, ref := range e {

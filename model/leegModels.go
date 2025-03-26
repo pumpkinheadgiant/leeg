@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"log/slog"
 	"sort"
 	"strings"
 )
@@ -100,6 +101,27 @@ func (t TeamsMap) NameAvailable(teamID string, name string) bool {
 	return true
 }
 
+func (t TeamsMap) AsList() []Team {
+	var teamList = TeamList{}
+	for _, team := range t {
+		teamList = append(teamList, team)
+	}
+	return teamList
+}
+
+func (t *TeamsMap) RemoveVictoryFromTeamRecords(winner string, loser string) {
+	for id, team := range *t {
+		if team.ID == winner {
+			team.TeamsDefeated = team.TeamsDefeated.RemoveFirst(loser)
+			(*t)[id] = team
+		} else if team.ID == loser {
+			team.TeamsDefeatedBy = team.TeamsDefeatedBy.RemoveFirst(winner)
+			(*t)[id] = team
+		}
+	}
+	slog.Info("totally")
+}
+
 func (t *TeamsMap) RenameTeam(teamID string, name string) (Team, error) {
 	var updatedTeam Team
 	for _, existingTeam := range *t {
@@ -145,6 +167,16 @@ func (t Team) AsRef() EntityRef {
 	return EntityRef{ID: t.ID, Text: t.Name, ImageURL: t.ImageURL, Type: TEAM}
 }
 
+type TeamList []Team
+
+func (t TeamList) AsEntityList() EntityRefList {
+	var list EntityRefList
+	for _, team := range t {
+		list = append(list, team.AsRef())
+	}
+	return list
+}
+
 type TeamUpdateRequest struct {
 	LeegID string
 	TeamID string
@@ -182,6 +214,18 @@ type Game struct {
 
 func (g Game) Complete() bool {
 	return g.Winner.ID != ""
+}
+
+func (g Game) GetWinner() EntityRef {
+	return g.Winner
+}
+
+func (g Game) GetLoser() EntityRef {
+	if g.TeamA.ID == g.Winner.ID {
+		return g.TeamB
+	} else {
+		return g.TeamA
+	}
 }
 
 func (g Game) AsRef() EntityRef {
@@ -242,10 +286,14 @@ type LeegPageData struct {
 
 type MatchupMap map[string]EntityRefList
 
-func (m *MatchupMap) RecordMatchup(game Game) error {
+func (m *MatchupMap) RecordMatchup(game Game) {
 	(*m)[game.TeamA.ID] = append((*m)[game.TeamA.ID], game.TeamB)
 	(*m)[game.TeamB.ID] = append((*m)[game.TeamB.ID], game.TeamA)
-	return nil
+}
+
+func (m *MatchupMap) RemoveMatchup(game Game) {
+	(*m)[game.TeamA.ID] = (*m)[game.TeamA.ID].RemoveFirst(game.TeamB.ID)
+	(*m)[game.TeamB.ID] = (*m)[game.TeamB.ID].RemoveFirst(game.TeamA.ID)
 }
 
 type NavContextKey struct{}

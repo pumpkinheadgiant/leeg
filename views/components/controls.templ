@@ -27,19 +27,25 @@ templ Team(team model.Team, outOfBand bool) {
     </li>
 }
 
-templ Game(game model.Game, editing bool, outOfBand bool) {
+templ Game(game model.Game, teams model.EntityRefList, editing bool, outOfBand bool) {
     <span id={fmt.Sprintf("game-%v", game.ID)}
         class="col-span-6 min-w-[210px] flex flex-col p-2 m-2 bg-white border rounded-sm border-black"
          if outOfBand {
             hx-swap-oob="true"
         }
-        >
-        <span class="mx-auto flex flex-col" 
-            if !game.Complete() {
-                hx-get={fmt.Sprintf("/leegs/%v/rounds/%v/games/%v?%v", views.LeegID(ctx), views.RoundID(ctx), game.ID, views.ToggleEdit(editing))}
-                hx-target={fmt.Sprintf("#game-%v", game.ID)} hx-swap="outerHTML"    
-            }
-        >
+    >
+        if editing {
+            @EditableGame(game, teams)
+        } else {
+            @ViewOnlyGame(game)
+        }
+    </span>
+}
+
+templ ViewOnlyGame(game model.Game) {
+    <span class="mx-auto flex flex-col" 
+        hx-get={fmt.Sprintf("/leegs/%v/rounds/%v/games/%v?editing=true", views.LeegID(ctx), views.RoundID(ctx), game.ID)}
+        hx-target={fmt.Sprintf("#game-%v", game.ID)} hx-swap="outerHTML">
             <span 
                 if game.TeamA.ID == game.Winner.ID {
                     class="mx-auto font-bold"
@@ -54,63 +60,75 @@ templ Game(game model.Game, editing bool, outOfBand bool) {
             </span>
             <span 
                 if game.TeamB.ID == game.Winner.ID {
-                      class="mx-auto font-bold"
+                    class="mx-auto font-bold"
                 } else {
                     class="mx-auto"
                 }
             >
                 { game.TeamB.Text }
             </span>
-            if !editing {
-                 if game.Winner.ID == "" {
-                    <span class="mx-auto">
-                        Winner: TBD
-                    </span>
-                }
+
+            if !game.Complete() {
+                <span class="mx-auto">
+                    Winner: TBD
+                </span>
             }
-        </span>
-        
-        if editing {
-            <form class="mx-auto" hx-swap="outerHTML" hx-target={fmt.Sprintf("#game-%v", game.ID)}
-                    hx-put={fmt.Sprintf("/leegs/%v/rounds/%v/games/%v", views.LeegID(ctx), views.RoundID(ctx), game.ID )}>
-                <label class="uk-form-label" for="winner">Winner</label>
-                <select name="winner">
-                    <option value={game.TeamA.ID}>{game.TeamA.Text}</option>
-                    <option value={game.TeamB.ID}>{game.TeamB.Text}</option>
-                </select>
-                <button>go</button>
-            </form>
-        } else {
-           
-        }
     </span>
 }
 
-
-templ RoundControls(round model.Round) {
-    <span id={fmt.Sprintf("round-controls-%v", round.ID)} class="w-full mx-auto flex flex-col m-2">
-        <span class="w-full mx-auto flex flex-row m-2">
-            if !round.Scheduled() {
-                <span class="mx-auto" data-uk-toggle={fmt.Sprintf("#game-form-%v", round.ID)}>
-                    Record Game
-                </span>
-                
-                <span class="mx-auto"
-                    hx-ext="multi-swap"
-                    hx-swap={fmt.Sprintf("multi:#round-games-%v:beforeend,#round-controls-%v:outerHTML", round.ID, round.ID)} 
-                    hx-post={fmt.Sprintf("/leegs/%v/rounds/%v/games", round.LeegID, round.ID)}
-                >
-                    Request Game
-                </span>
-            } else {
-                <span class="mx-auto">
-                    Round Scheduled
-                </span>
-            }
-        </span>
-        @forms.GameForm(round.LeegID, round.ID, round.AllTeams, "","",map[string]string{}, true, false)
+templ EditableGame(game model.Game, teams model.EntityRefList) {
+    <span class="mx-auto flex flex-col">
+        @UpdateGameMatchupForm(views.LeegID(ctx), game.Round.ID, game.ID, teams, game.TeamA.ID, game.TeamB.ID, map[string]string{})
+        @UpdateWinnerForm(game)
     </span>
-    
+}
+
+templ UpdateWinnerForm(game model.Game) {
+    <form class="mx-auto" hx-swap="outerHTML" hx-target={fmt.Sprintf("#game-%v", game.ID)}
+                hx-put={fmt.Sprintf("/leegs/%v/rounds/%v/games/%v", views.LeegID(ctx), game.Round.ID, game.ID )}>
+        <label class="uk-form-label" for="winner">Winner</label>
+        <select name="winner">
+            <option value={game.TeamA.ID}>{game.TeamA.Text}</option>
+            <option value={game.TeamB.ID}>{game.TeamB.Text}</option>
+        </select>
+        <button>go</button>
+    </form>
+}
+
+templ UpdateGameMatchupForm(leegID string, roundID string, gameID string, teams model.EntityRefList, teamA string, teamB string, errors map[string]string) {
+    <form id={fmt.Sprintf("rematch-game-form-%v", roundID)}
+            class="min-w-[210px] mx-auto m-2 bg-white border rounded-sm border-black grid grid-cols-6"
+            hx-put={fmt.Sprintf("/leegs/%v/rounds/%v/games/%v", leegID, roundID, gameID)}
+            hx-target-4**={fmt.Sprintf("#rematch-game-form-%v", roundID)}
+            hx-swap="outerHTML"
+            hx-target={fmt.Sprintf("#game-%v", gameID)}
+    >
+        <select name="teamA" class="col-span-3">
+            for _, team := range teams {
+                <option value={team.ID} selected?={ teamA == team.ID }>
+                    { team.Text}
+                </option>
+            }
+        </select>
+                <select name="teamB" class="col-span-3">
+            for _, team := range teams {
+                <option value={team.ID} selected?={team.ID == teamB && teamB != ""}>
+                    { team.Text}
+                </option>
+            }
+        </select>
+        if errors["teamB"] != "" {
+           <span class="text-red-500 text-xs col-span-6">
+                { errors["teamB"]}
+            </span>
+        }
+        <span class="" hx-get={ fmt.Sprintf("/leegs/%v/rounds/%v/games/%v?editing=false", views.LeegID(ctx), roundID, gameID) } >
+            cancel
+        </span>
+        <button>
+            go
+        </button>
+    </form>
 }
 
 templ RoundContainer(round model.EntityRef) {
@@ -158,9 +176,6 @@ templ RoundContent(round model.Round, roundRef model.EntityRef, gamesMap map[str
 templ Round(round model.Round, gamesMap map[string]model.Game) {
     <span class="mx-auto min-w-[454px] max-w-[550px] border flex flex-row items-center rounded border-black">
         <span class="flex flex-col mx-auto">
-            // <span class="mx-auto flex flex-row font-bold">
-            //     { fmt.Sprintf("Round %v", round.RoundNumber)}
-            // </span>
             @RoundGames(round, gamesMap)
             @RoundControls(round)
         </span>
@@ -170,8 +185,33 @@ templ Round(round model.Round, gamesMap map[string]model.Game) {
 templ RoundGames(round model.Round, gamesMap map[string]model.Game) {
     <span id={fmt.Sprintf("round-games-%v", round.ID)} class="flex !pl-0 grid grid-cols-6 sm:grid-cols-12">
         for _, game := range round.Games {
-            @Game(gamesMap[game.ID], false, false)
+            @Game(gamesMap[game.ID], round.AllTeams, false, false)
         }
+    </span>
+}
+
+templ RoundControls(round model.Round) {
+    <span id={fmt.Sprintf("round-controls-%v", round.ID)} class="w-full mx-auto flex flex-col m-2">
+        <span class="w-full mx-auto flex flex-row m-2">
+            if !round.Scheduled() {
+                <span class="mx-auto" data-uk-toggle={fmt.Sprintf("#record-game-form-%v", round.ID)}>
+                    Record Game
+                </span>
+                
+                <span class="mx-auto"
+                    hx-ext="multi-swap"
+                    hx-swap={fmt.Sprintf("multi:#round-games-%v:beforeend,#round-controls-%v:outerHTML", round.ID, round.ID)} 
+                    hx-post={fmt.Sprintf("/leegs/%v/rounds/%v/games", round.LeegID, round.ID)}
+                >
+                    Request Game
+                </span>
+            } else {
+                <span class="mx-auto">
+                    Round Scheduled
+                </span>
+            }
+        </span>
+        @forms.RecordGameForm(round.LeegID, round.ID, round.AllTeams, "","",map[string]string{}, true, false)
     </span>
 }
 

@@ -29,10 +29,10 @@ func ToggleOpen(showOpen bool) string {
 	}
 }
 
-func ToggleEdit(edit bool) string {
-	if edit {
-		return "edit=true"
+func ToggleEditing(editing bool) string {
+	if editing {
+		return "editing=true"
 	} else {
-		return "edit=false"
+		return "editing=false"
 	}
 }

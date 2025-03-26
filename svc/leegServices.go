@@ -56,10 +56,11 @@ func (l LeegServices) RenameTeam(update model.TeamUpdateRequest) (model.Team, []
 	})
 }
 
-func (l LeegServices) ResolveGame(leegID string, gameID string, winnerID string) (model.Game, []model.Team, error) {
+func (l LeegServices) ResolveGame(leegID string, gameID string, winnerID string) (model.Game, []model.Team, []model.Team, error) {
 	var game model.Game
-	var teams []model.Team
-	return game, teams, l.Db.Update(func(tx *bbolt.Tx) error {
+	var modifiedTeams []model.Team
+	var allTeams []model.Team
+	return game, allTeams, modifiedTeams, l.Db.Update(func(tx *bbolt.Tx) error {
 		leegDAO, err := l.GetLeegDAO(tx, leegID)
 		if err != nil {
 			return err
@@ -91,22 +92,105 @@ func (l LeegServices) ResolveGame(leegID string, gameID string, winnerID string)
 
 		leeg.TeamsMap[teamA.ID] = teamA
 		leeg.TeamsMap[teamB.ID] = teamB
-		teams = append(teams, teamA, teamB)
+
+		allTeams = leeg.TeamsMap.AsList()
+		modifiedTeams = append(modifiedTeams, teamA, teamB)
+
 		return leegDAO.saveLeeg(leeg)
 	})
 }
 
-func (l LeegServices) GetGame(leegID string, roundID string, gameID string) (model.Game, error) {
+func (l LeegServices) GetGame(leegID string, roundID string, gameID string) (model.Game, model.EntityRefList, error) {
 	var game model.Game
-	return game, l.Db.View(func(tx *bbolt.Tx) error {
-		leegDAO, err := l.GetLeegDAO(tx, leegID)
+	var teams model.EntityRefList
+	return game, teams, l.Db.View(func(tx *bbolt.Tx) error {
+		dao, err := l.GetLeegDAO(tx, leegID)
+		if err != nil {
+			return err
+		}
+		round, err := dao.getRoundByID(roundID)
+		if err != nil {
+			return err
+		}
+		teams = round.AllTeams
+		game, err = dao.getGameByID(gameID)
+		return err
+
+	})
+}
+
+func (l LeegServices) RematchGame(leegID string, roundID string, gameID string, teamA string, teamB string) (model.Game, []model.Team, []model.Team, error) {
+	var game model.Game
+	var modifiedTeams []model.Team
+	var allTeams []model.Team
+	return game, modifiedTeams, allTeams, l.Db.Update(func(tx *bbolt.Tx) error {
+		dao, err := l.GetLeegDAO(tx, leegID)
+		if err != nil {
+			return err
+		}
+		leeg := dao.Leeg
+
+		round, err := dao.getRoundByID(roundID)
+		if err != nil {
+			return err
+		}
+		existingGame, err := dao.getGameByID(gameID)
+		if err != nil {
+			return err
+		}
+		teamAUpdated := teamA != existingGame.TeamA.ID
+		teamBUpdated := teamB != existingGame.TeamB.ID
+
+		if !teamAUpdated && !teamBUpdated {
+			// no-op, so just return the existing game and no teams need to be updated
+			game = existingGame
+			return nil
+		}
+
+		originalWinner := existingGame.GetWinner()
+		originalLoser := existingGame.GetLoser()
+
+		round.UnplayedTeams = append(round.UnplayedTeams, existingGame.TeamA)
+		round.UnplayedTeams = append(round.UnplayedTeams, existingGame.TeamB)
+
+		leeg.MatchupMap.RemoveMatchup(existingGame) // this will pull the most recent instance each team from each other's history
+
+		if existingGame.Complete() {
+			// remove the recorded victory
+			existingGame.Winner = model.EntityRef{}
+			leeg.TeamsMap.RemoveVictoryFromTeamRecords(originalWinner.ID, originalLoser.ID)
+			modifiedTeams = append(modifiedTeams, leeg.TeamsMap[originalWinner.ID])
+			modifiedTeams = append(modifiedTeams, leeg.TeamsMap[originalLoser.ID])
+		}
+
+		newTeamA := leeg.TeamsMap[teamA].AsRef()
+		existingGame.TeamA = newTeamA
+		newTeamB := leeg.TeamsMap[teamB].AsRef()
+		existingGame.TeamB = newTeamB
+
+		round.Games = round.Games.Update(existingGame.AsRef())
+		round.UnplayedTeams = round.UnplayedTeams.RemoveAll(newTeamA.ID)
+		round.UnplayedTeams = round.UnplayedTeams.RemoveAll(newTeamB.ID)
+		err = dao.saveRound(round)
 		if err != nil {
 			return err
 		}
 
-		game, err = leegDAO.getGameByID(gameID)
-		return err
+		leeg.MatchupMap.RecordMatchup(existingGame)
 
+		err = dao.saveGame(existingGame)
+		if err != nil {
+			return err
+		}
+
+		allTeams = leeg.TeamsMap.AsList()
+
+		err = dao.saveLeeg(leeg)
+		if err != nil {
+			return err
+		}
+		game = existingGame
+		return nil
 	})
 }
 
@@ -136,10 +220,11 @@ func (l LeegServices) RecordMatchup(leegID string, roundID string, teamA string,
 			TeamA:       leeg.TeamsMap[teamA].AsRef(),
 			TeamB:       leeg.TeamsMap[teamB].AsRef(),
 		}
-		round.UnplayedTeams = round.UnplayedTeams.Remove(teamA)
-		round.UnplayedTeams = round.UnplayedTeams.Remove(teamB)
+		round.UnplayedTeams = round.UnplayedTeams.RemoveAll(teamA)
+		round.UnplayedTeams = round.UnplayedTeams.RemoveAll(teamB)
 		round.Games = append(round.Games, game.AsRef())
 
+		leeg.MatchupMap.RecordMatchup(game)
 		if len(round.Games) == round.GamesPerRound {
 			var advanced = false
 			round, advanced, err = leegDAO.advanceRound(round)
@@ -160,6 +245,53 @@ func (l LeegServices) RecordMatchup(leegID string, roundID string, teamA string,
 			return err
 		}
 		return leegDAO.saveLeeg(leeg)
+	})
+}
+
+func (l LeegServices) CreateRandomGame(leegID string, roundID string) (model.Round, model.Game, error) {
+	var game model.Game
+	var round model.Round
+	return round, game, l.Db.Update(func(tx *bbolt.Tx) error {
+		leegDAO, err := l.GetLeegDAO(tx, leegID)
+		if err != nil {
+			return err
+		}
+		leeg := leegDAO.Leeg
+
+		round, err = leegDAO.getRoundByID(roundID)
+		if err != nil {
+			return err
+		}
+
+		gameNumber := len(round.Games) + 1
+		game, round.UnplayedTeams, err = newRandomMatchup(gameNumber, round.RoundNumber, round.UnplayedTeams, leeg.MatchupMap, l.Rando)
+		if err != nil {
+			return err
+		}
+		game.Round = round.AsRef()
+		err = leegDAO.saveGame(game)
+		if err != nil {
+			return err
+		}
+
+		round.Games = append(round.Games, game.AsRef())
+		var advanced = false
+		round, advanced, err = leegDAO.advanceRound(round)
+		if err != nil {
+			return err
+		}
+		if advanced {
+			leeg.ActiveRound = leeg.GetNextRound()
+		}
+
+		err = leegDAO.saveRound(round)
+		if err != nil {
+			return err
+		}
+		leeg.MatchupMap.RecordMatchup(game)
+
+		err = leegDAO.saveLeeg(leeg)
+		return err
 	})
 }
 
@@ -190,54 +322,6 @@ func (l *LeegDAO) advanceRound(round model.Round) (model.Round, bool, error) {
 	return round, advanced, nil
 }
 
-func (l LeegServices) CreateRandomGame(leegID string, roundID string) (model.Round, model.Game, error) {
-	var game model.Game
-	var round model.Round
-	return round, game, l.Db.Update(func(tx *bbolt.Tx) error {
-		leegDAO, err := l.GetLeegDAO(tx, leegID)
-		if err != nil {
-			return err
-		}
-		leeg := leegDAO.Leeg
-
-		round, err = leegDAO.getRoundByID(roundID)
-		if err != nil {
-			return err
-		}
-
-		gameNumber := len(round.Games) + 1
-		game, round.UnplayedTeams, err = newRandomMatchup(gameNumber, round.RoundNumber, round.UnplayedTeams, leeg.MatchupMap, l.Rando)
-		if err != nil {
-			return err
-		}
-		err = leegDAO.saveGame(game)
-		if err != nil {
-			return err
-		}
-
-		round.Games = append(round.Games, game.AsRef())
-		var advanced = false
-		round, advanced, err = leegDAO.advanceRound(round)
-		if err != nil {
-			return err
-		}
-		if advanced {
-			leeg.ActiveRound = leeg.GetNextRound()
-		}
-
-		err = leegDAO.saveRound(round)
-		if err != nil {
-			return err
-		}
-		err = leeg.MatchupMap.RecordMatchup(game)
-		if err != nil {
-			return err
-		}
-		err = leegDAO.saveLeeg(leeg)
-		return err
-	})
-}
-
 func newRandomMatchup(gameNumber int, roundNumber int, eligibleTeams model.EntityRefList, leegMatchupMap map[string]model.EntityRefList, rando rando.RandoConfig) (model.Game, model.EntityRefList, error) {
 	var game = model.Game{ID: model.NewId(), GameNumber: gameNumber, RoundNumber: roundNumber}
 	if len(eligibleTeams) < 2 {
@@ -258,8 +342,8 @@ func newRandomMatchup(gameNumber int, roundNumber int, eligibleTeams model.Entit
 		attempts++
 	}
 
-	eligibleTeams = eligibleTeams.Remove(game.TeamA.ID)
-	eligibleTeams = eligibleTeams.Remove(game.TeamB.ID)
+	eligibleTeams = eligibleTeams.RemoveAll(game.TeamA.ID)
+	eligibleTeams = eligibleTeams.RemoveAll(game.TeamB.ID)
 
 	return game, eligibleTeams, nil
 }
