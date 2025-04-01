@@ -6,7 +6,7 @@ import (
 )
 
 func LeegID(ctx context.Context) string {
-	if nav, exists := ctx.Value(model.ContextKey{}).(model.Nav); exists {
+	if nav, exists := ctx.Value(model.NavContextKey{}).(model.Nav); exists {
 		return nav.LeegID
 	} else {
 		return ""
@@ -14,7 +14,7 @@ func LeegID(ctx context.Context) string {
 }
 
 func RoundID(ctx context.Context) string {
-	if nav, exists := ctx.Value(model.ContextKey{}).(model.Nav); exists {
+	if nav, exists := ctx.Value(model.NavContextKey{}).(model.Nav); exists {
 		return nav.RoundID
 	} else {
 		return ""
@@ -29,10 +29,10 @@ func ToggleOpen(showOpen bool) string {
 	}
 }
 
-func ToggleEdit(edit bool) string {
-	if edit {
-		return "edit=true"
+func ToggleEditing(editing bool) string {
+	if editing {
+		return "editing=true"
 	} else {
-		return "edit=false"
+		return "editing=false"
 	}
 }

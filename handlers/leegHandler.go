@@ -26,7 +26,7 @@ func (l LeegHandler) HandleGetLeeg(w http.ResponseWriter, r *http.Request) error
 		return err
 	}
 	nav := model.Nav{LeegID: leegID}
-	ctx := context.WithValue(r.Context(), model.ContextKey{}, nav)
+	ctx := context.WithValue(r.Context(), model.NavContextKey{}, nav)
 
 	return Render(w, r.WithContext(ctx), pages.LeegPage(leeg))
 }

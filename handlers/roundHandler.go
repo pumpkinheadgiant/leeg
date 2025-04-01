@@ -16,17 +16,15 @@ type RoundHandler struct {
 func (rh RoundHandler) HandleGetRound(w http.ResponseWriter, r *http.Request) error {
 	leegID := r.PathValue("leegID")
 	if leegID == "" {
-		w.WriteHeader(http.StatusNotFound)
 		return hxRedirect(w, r, "/")
 	}
 	roundID := r.PathValue("roundID")
 	if roundID == "" {
-		w.WriteHeader(http.StatusNotFound)
 		return hxRedirect(w, r, "/")
 	}
 	open := r.URL.Query().Get("open") == "true"
 	nav := model.Nav{LeegID: leegID, RoundID: roundID}
-	ctx := context.WithValue(r.Context(), model.ContextKey{}, nav)
+	ctx := context.WithValue(r.Context(), model.NavContextKey{}, nav)
 
 	round, games, err := rh.service.GetRound(leegID, roundID)
 	if err != nil {

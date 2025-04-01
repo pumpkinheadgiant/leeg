@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"log/slog"
 	"sort"
 	"strings"
 )
@@ -26,6 +27,16 @@ func (l Leeg) TotalRounds() int {
 	return len(l.Rounds)
 }
 
+func (l Leeg) TeamList() EntityRefList {
+	allTeams := EntityRefList{}
+	for _, team := range l.TeamsMap {
+		allTeams = append(allTeams, team.AsRef())
+	}
+	sort.Slice(allTeams, func(i, j int) bool {
+		return allTeams[i].Text > allTeams[j].Text
+	})
+	return allTeams
+}
 func (l Leeg) GamesPerRound() int {
 	return len(l.TeamsMap) / 2
 }
@@ -51,17 +62,16 @@ func (l Leeg) GetRankedTeamsList() EntityRefList {
 	}
 
 	sort.Slice(ss, func(i, j int) bool {
-
 		teamA := ss[i].Value
 		teamB := ss[j].Value
-		if teamA.Wins() == teamB.Wins() {
-			if teamA.Losses() == teamB.Losses() {
+		if teamA.Wins == teamB.Wins {
+			if teamA.Losses == teamB.Losses {
 				return teamA.Name < teamB.Name
 			} else {
-				return teamA.Losses() < teamB.Losses()
+				return teamA.Losses < teamB.Losses
 			}
 		}
-		return teamA.Wins() > teamB.Wins()
+		return teamA.Wins > teamB.Wins
 	})
 
 	for _, team := range ss {
@@ -91,6 +101,27 @@ func (t TeamsMap) NameAvailable(teamID string, name string) bool {
 	return true
 }
 
+func (t TeamsMap) AsList() []Team {
+	var teamList = TeamList{}
+	for _, team := range t {
+		teamList = append(teamList, team)
+	}
+	return teamList
+}
+
+func (t *TeamsMap) RemoveVictoryFromTeamRecords(winner string, loser string) {
+	for id, team := range *t {
+		if team.ID == winner {
+			team.Wins--
+			(*t)[id] = team
+		} else if team.ID == loser {
+			team.Losses--
+			(*t)[id] = team
+		}
+	}
+	slog.Info("totally")
+}
+
 func (t *TeamsMap) RenameTeam(teamID string, name string) (Team, error) {
 	var updatedTeam Team
 	for _, existingTeam := range *t {
@@ -98,41 +129,37 @@ func (t *TeamsMap) RenameTeam(teamID string, name string) (Team, error) {
 			existingTeam.Name = name
 			(*t)[teamID] = existingTeam
 			updatedTeam = existingTeam
+
 			break
 		}
 	}
 	if updatedTeam.ID == "" {
 		return Team{}, fmt.Errorf("no team with ID %v in leeg", teamID)
 	}
-	updatedRef := updatedTeam.AsRef()
 
-	for _, existingTeam := range *t {
-		if existingTeam.ID != teamID {
-			existingTeam.TeamsDefeated = existingTeam.TeamsDefeated.Update(updatedRef)
-			existingTeam.TeamsDefeatedBy = existingTeam.TeamsDefeatedBy.Update(updatedRef)
-		}
-	}
 	return updatedTeam, nil
 }
 
 type Team struct {
-	ID              string        `json:"id"`
-	Name            string        `json:"name"`
-	ImageURL        string        `json:"imageURL"`
-	TeamsDefeated   EntityRefList `json:"teamsDefeated"`
-	TeamsDefeatedBy EntityRefList `json:"teamsDefeatedBy"`
-}
-
-func (t Team) Wins() int {
-	return len(t.TeamsDefeated)
-}
-
-func (t Team) Losses() int {
-	return len(t.TeamsDefeatedBy)
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	ImageURL string `json:"imageURL"`
+	Wins     int    `json:"wins"`
+	Losses   int    `json:"losses"`
 }
 
 func (t Team) AsRef() EntityRef {
 	return EntityRef{ID: t.ID, Text: t.Name, ImageURL: t.ImageURL, Type: TEAM}
+}
+
+type TeamList []Team
+
+func (t TeamList) AsEntityList() EntityRefList {
+	var list EntityRefList
+	for _, team := range t {
+		list = append(list, team.AsRef())
+	}
+	return list
 }
 
 type TeamUpdateRequest struct {
@@ -148,6 +175,7 @@ type Round struct {
 	Games         EntityRefList `json:"games"`
 	IsActive      bool          `json:"isActive"`
 	GamesPerRound int           `json:"gamesPerRound"`
+	AllTeams      EntityRefList `json:"allTeams"`
 	UnplayedTeams EntityRefList `json:"unplayedTeams"`
 }
 
@@ -171,6 +199,18 @@ type Game struct {
 
 func (g Game) Complete() bool {
 	return g.Winner.ID != ""
+}
+
+func (g Game) GetWinner() EntityRef {
+	return g.Winner
+}
+
+func (g Game) GetLoser() EntityRef {
+	if g.TeamA.ID == g.Winner.ID {
+		return g.TeamB
+	} else {
+		return g.TeamA
+	}
 }
 
 func (g Game) AsRef() EntityRef {
@@ -231,13 +271,17 @@ type LeegPageData struct {
 
 type MatchupMap map[string]EntityRefList
 
-func (m *MatchupMap) RecordMatchup(game Game) error {
+func (m *MatchupMap) RecordMatchup(game Game) {
 	(*m)[game.TeamA.ID] = append((*m)[game.TeamA.ID], game.TeamB)
 	(*m)[game.TeamB.ID] = append((*m)[game.TeamB.ID], game.TeamA)
-	return nil
 }
 
-type ContextKey struct{}
+func (m *MatchupMap) RemoveMatchup(game Game) {
+	(*m)[game.TeamA.ID] = (*m)[game.TeamA.ID].RemoveFirst(game.TeamB.ID)
+	(*m)[game.TeamB.ID] = (*m)[game.TeamB.ID].RemoveFirst(game.TeamA.ID)
+}
+
+type NavContextKey struct{}
 
 type Nav struct {
 	LeegID  string
