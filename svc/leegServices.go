@@ -76,12 +76,12 @@ func (l LeegServices) ResolveGame(leegID string, gameID string, winnerID string)
 
 		teamAWins := teamA.ID == winnerID
 		if teamAWins {
-			teamA.TeamsDefeated = append(teamA.TeamsDefeated, teamB.AsRef())
-			teamB.TeamsDefeatedBy = append(teamB.TeamsDefeatedBy, teamA.AsRef())
+			teamA.Wins++
+			teamB.Losses++
 			game.Winner = teamA.AsRef()
 		} else {
-			teamA.TeamsDefeatedBy = append(teamA.TeamsDefeatedBy, teamB.AsRef())
-			teamB.TeamsDefeated = append(teamB.TeamsDefeated, teamA.AsRef())
+			teamA.Losses++
+			teamB.Wins++
 			game.Winner = teamB.AsRef()
 		}
 
@@ -112,10 +112,10 @@ func (l LeegServices) GetGame(leegID string, roundID string, gameID string) (mod
 		if err != nil {
 			return err
 		}
+
 		teams = round.AllTeams
 		game, err = dao.getGameByID(gameID)
 		return err
-
 	})
 }
 
@@ -225,16 +225,13 @@ func (l LeegServices) RecordMatchup(leegID string, roundID string, teamA string,
 		round.Games = append(round.Games, game.AsRef())
 
 		leeg.MatchupMap.RecordMatchup(game)
+
 		if len(round.Games) == round.GamesPerRound {
-			var advanced = false
-			round, advanced, err = leegDAO.advanceRound(round)
+			err = leegDAO.advanceRound()
 			if err != nil {
 				return err
 			}
-			if advanced {
-				leeg.ActiveRound = leeg.GetNextRound()
-			}
-			leeg.ActiveRound = round.AsRef()
+			round.IsActive = false
 		}
 		err = leegDAO.saveGame(game)
 		if err != nil {
@@ -275,13 +272,12 @@ func (l LeegServices) CreateRandomGame(leegID string, roundID string) (model.Rou
 		}
 
 		round.Games = append(round.Games, game.AsRef())
-		var advanced = false
-		round, advanced, err = leegDAO.advanceRound(round)
-		if err != nil {
-			return err
-		}
-		if advanced {
-			leeg.ActiveRound = leeg.GetNextRound()
+		if len(round.Games) == round.GamesPerRound {
+			err := leegDAO.advanceRound()
+			if err != nil {
+				return err
+			}
+			round.IsActive = false
 		}
 
 		err = leegDAO.saveRound(round)
@@ -290,36 +286,34 @@ func (l LeegServices) CreateRandomGame(leegID string, roundID string) (model.Rou
 		}
 		leeg.MatchupMap.RecordMatchup(game)
 
-		err = leegDAO.saveLeeg(leeg)
-		return err
+		return nil
 	})
 }
 
-func (l *LeegDAO) advanceRound(round model.Round) (model.Round, bool, error) {
-	var advanced = false
-	if len(round.Games) == round.GamesPerRound {
-		// This Round is fully scheduled
-		round.IsActive = false
+func (l *LeegDAO) advanceRound() error {
+	nextRoundRef := l.Leeg.GetNextRound()
+	if nextRoundRef.ID == "" {
+		// This Leeg is fully scheduled
+		l.Leeg.Scheduled = true
+	} else {
+		// Next round becomes active
+		nextRound, err := l.getRoundByID(nextRoundRef.ID)
+		if err != nil {
+			return err
+		}
 
-		nextRoundRef := l.Leeg.GetNextRound()
-		if nextRoundRef.ID == "" {
-			// This Leeg is fully scheduled
-			l.Leeg.Scheduled = true
-		} else {
-			// Next round becomes active
-			nextRound, err := l.getRoundByID(nextRoundRef.ID)
-			if err != nil {
-				return round, advanced, err
-			}
-			nextRound.IsActive = true
-			err = l.saveRound(nextRound)
-			if err != nil {
-				return round, advanced, err
-			}
-			advanced = true
+		nextRound.IsActive = true
+		err = l.saveRound(nextRound)
+		if err != nil {
+			return err
+		}
+		l.Leeg.ActiveRound = nextRoundRef
+		err = l.saveLeeg(l.Leeg)
+		if err != nil {
+			return err
 		}
 	}
-	return round, advanced, nil
+	return nil
 }
 
 func newRandomMatchup(gameNumber int, roundNumber int, eligibleTeams model.EntityRefList, leegMatchupMap map[string]model.EntityRefList, rando rando.RandoConfig) (model.Game, model.EntityRefList, error) {
@@ -500,11 +494,7 @@ func (b LeegServices) GetRound(leegID string, roundID string) (model.Round, map[
 		if err != nil {
 			return err
 		}
-		roundBytes := leegDAO.RoundsBucket.Get([]byte(roundID))
-		if roundBytes == nil {
-			return fmt.Errorf("couldn't locate round with id '%v'", roundID)
-		}
-		err = json.Unmarshal(roundBytes, &round)
+		round, err = leegDAO.getRoundByID(roundID)
 		if err != nil {
 			return err
 		}

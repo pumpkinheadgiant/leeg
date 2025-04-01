@@ -64,14 +64,14 @@ func (l Leeg) GetRankedTeamsList() EntityRefList {
 	sort.Slice(ss, func(i, j int) bool {
 		teamA := ss[i].Value
 		teamB := ss[j].Value
-		if teamA.Wins() == teamB.Wins() {
-			if teamA.Losses() == teamB.Losses() {
+		if teamA.Wins == teamB.Wins {
+			if teamA.Losses == teamB.Losses {
 				return teamA.Name < teamB.Name
 			} else {
-				return teamA.Losses() < teamB.Losses()
+				return teamA.Losses < teamB.Losses
 			}
 		}
-		return teamA.Wins() > teamB.Wins()
+		return teamA.Wins > teamB.Wins
 	})
 
 	for _, team := range ss {
@@ -112,10 +112,10 @@ func (t TeamsMap) AsList() []Team {
 func (t *TeamsMap) RemoveVictoryFromTeamRecords(winner string, loser string) {
 	for id, team := range *t {
 		if team.ID == winner {
-			team.TeamsDefeated = team.TeamsDefeated.RemoveFirst(loser)
+			team.Wins--
 			(*t)[id] = team
 		} else if team.ID == loser {
-			team.TeamsDefeatedBy = team.TeamsDefeatedBy.RemoveFirst(winner)
+			team.Losses--
 			(*t)[id] = team
 		}
 	}
@@ -136,31 +136,16 @@ func (t *TeamsMap) RenameTeam(teamID string, name string) (Team, error) {
 	if updatedTeam.ID == "" {
 		return Team{}, fmt.Errorf("no team with ID %v in leeg", teamID)
 	}
-	updatedRef := updatedTeam.AsRef()
 
-	for _, existingTeam := range *t {
-		if existingTeam.ID != teamID {
-			existingTeam.TeamsDefeated = existingTeam.TeamsDefeated.Update(updatedRef)
-			existingTeam.TeamsDefeatedBy = existingTeam.TeamsDefeatedBy.Update(updatedRef)
-		}
-	}
 	return updatedTeam, nil
 }
 
 type Team struct {
-	ID              string        `json:"id"`
-	Name            string        `json:"name"`
-	ImageURL        string        `json:"imageURL"`
-	TeamsDefeated   EntityRefList `json:"teamsDefeated"`
-	TeamsDefeatedBy EntityRefList `json:"teamsDefeatedBy"`
-}
-
-func (t Team) Wins() int {
-	return len(t.TeamsDefeated)
-}
-
-func (t Team) Losses() int {
-	return len(t.TeamsDefeatedBy)
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	ImageURL string `json:"imageURL"`
+	Wins     int    `json:"wins"`
+	Losses   int    `json:"losses"`
 }
 
 func (t Team) AsRef() EntityRef {
