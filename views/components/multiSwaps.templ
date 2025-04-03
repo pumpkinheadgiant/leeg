@@ -7,7 +7,7 @@ import (
 
 templ GameAndControls(game model.Game, round model.Round) {
     <div id={fmt.Sprintf("round-games-%v", round.ID)} hx-swap-oob="beforeend">
-        @Game( game, round.AllTeams, false, false)
+        @Game( game, round.SortedTeams(), false, false)
     </div>
 
     <div id={fmt.Sprintf("round-controls-%v", round.ID)} hx-swap-oob="outerHTML">

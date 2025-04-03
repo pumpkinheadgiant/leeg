@@ -63,14 +63,15 @@ func (g GameHandler) HandleGameUpdate(w http.ResponseWriter, r *http.Request) er
 	var game model.Game
 	var allTeams model.TeamList
 	var updatedTeams []model.Team
+	var recordsMap model.RecordsMap
 
 	if winnerID != "" {
-		game, allTeams, updatedTeams, err = g.service.ResolveGame(leegID, gameID, winnerID)
+		game, allTeams, updatedTeams, recordsMap, err = g.service.ResolveGame(leegID, gameID, winnerID)
 		if err != nil {
 			return err
 		}
 	} else {
-		game, allTeams, updatedTeams, err = g.service.RematchGame(leegID, roundID, gameID, teamA, teamB)
+		game, recordsMap, allTeams, updatedTeams, err = g.service.RematchGame(leegID, roundID, gameID, teamA, teamB)
 		if err != nil {
 			return err
 		}
@@ -85,7 +86,7 @@ func (g GameHandler) HandleGameUpdate(w http.ResponseWriter, r *http.Request) er
 	}
 
 	for _, team := range updatedTeams {
-		err = Render(w, r.WithContext(ctx), components.Team(team, true))
+		err = Render(w, r.WithContext(ctx), components.Team(team, recordsMap[team.ID], true))
 		if err != nil {
 			return err
 		}
@@ -110,12 +111,15 @@ func (g GameHandler) HandleGameCreationRequest(w http.ResponseWriter, r *http.Re
 	}
 	var round model.Round
 	var game model.Game
+	var updatedTeams = []model.Team{}
+	var recordsMap model.RecordsMap
 
 	nav := model.Nav{LeegID: leegID, RoundID: roundID}
 	ctx := context.WithValue(r.Context(), model.NavContextKey{}, nav)
 
 	teamA := r.FormValue("teamA")
 	teamB := r.FormValue("teamB")
+	winner := r.FormValue("winner")
 
 	if teamA == "" {
 		round, game, err = g.service.CreateRandomGame(leegID, roundID)
@@ -124,20 +128,34 @@ func (g GameHandler) HandleGameCreationRequest(w http.ResponseWriter, r *http.Re
 		}
 	} else {
 		var teams model.EntityRefList
-		if teamA == teamB {
+		if teamA == teamB || teamB == "" {
 			teams, err = g.service.GetTeams(leegID)
 			if err != nil {
 				return err
 			}
+			w.Header().Set("HX-Reswap", "outerHTML")
 			w.WriteHeader(http.StatusBadRequest)
-			return Render(w, r.WithContext(ctx), forms.RecordGameForm(leegID, roundID, teams, teamA, teamB, map[string]string{"teamB": "a team can't play itself"}, false, false))
+			if teamA == teamB {
+				return Render(w, r.WithContext(ctx), forms.RecordGameForm(leegID, roundID, teams, teamA, teamB, map[string]string{"teamB": "a team can't play itself"}, false, false))
+			} else {
+				return Render(w, r.WithContext(ctx), forms.RecordGameForm(leegID, roundID, teams, teamA, teamB, map[string]string{"teamB": "must specify both teams"}, false, false))
+			}
 		}
-		round, game, err = g.service.RecordMatchup(leegID, roundID, teamA, teamB)
+		round, game, updatedTeams, recordsMap, err = g.service.RecordMatchup(leegID, roundID, teamA, teamB, winner)
 		if err != nil {
 			return err
 		}
-		return Render(w, r.WithContext(ctx), components.GameAndControls(game, round))
+		err = Render(w, r.WithContext(ctx), components.GameAndControls(game, round))
+		if err != nil {
+			return err
+		}
+		for _, team := range updatedTeams {
+			err = Render(w, r.WithContext(ctx), components.Team(team, recordsMap[team.ID], true))
+			if err != nil {
+				return err
+			}
+		}
 	}
 
-	return Render(w, r.WithContext(ctx), components.GameAndControls(game, round))
+	return nil
 }

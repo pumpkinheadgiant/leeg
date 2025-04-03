@@ -7,7 +7,7 @@ import (
     "leeg/views/components/forms"
 )
 
-templ Team(team model.Team, outOfBand bool) {
+templ Team(team model.Team, record model.Record, outOfBand bool) {
     <li id={fmt.Sprintf("team-%v", team.ID)} 
         if outOfBand {
             hx-swap-oob="true"
@@ -18,7 +18,7 @@ templ Team(team model.Team, outOfBand bool) {
                 <span class="mr-3">{ team.Name }</span>
             </span>
             <span class="w-full flex flex-col items-start">
-                <span class="ml-3">{ fmt.Sprintf("%v/%v", team.Wins, team.Losses) }</span>
+                <span class="ml-3">{ fmt.Sprintf("%v/%v", record.Wins, record.Losses) }</span>
             </span>
         </span>
         <span id={fmt.Sprintf("team-form-%v", team.ID)} class="text-sm" hidden>
@@ -91,7 +91,7 @@ templ UpdateWinnerForm(game model.Game) {
             <option value={game.TeamA.ID}>{game.TeamA.Text}</option>
             <option value={game.TeamB.ID}>{game.TeamB.Text}</option>
         </select>
-        <button class="mx-auto">update</button>
+        <button class="w-full mx-auto">update</button>
     </form>
 }
 
@@ -185,33 +185,37 @@ templ Round(round model.Round, gamesMap map[string]model.Game) {
 templ RoundGames(round model.Round, gamesMap map[string]model.Game) {
     <span id={fmt.Sprintf("round-games-%v", round.ID)} class="flex !pl-0 grid grid-cols-6 sm:grid-cols-12">
         for _, game := range round.Games {
-            @Game(gamesMap[game.ID], round.AllTeams, false, false)
+            @Game(gamesMap[game.ID], round.SortedTeams(), false, false)
         }
     </span>
 }
 
 templ RoundControls(round model.Round) {
     <span id={fmt.Sprintf("round-controls-%v", round.ID)} class="w-full mx-auto flex flex-col m-2">
-        <span class="w-full mx-auto flex flex-row m-2">
+        <span class="grid grid-cols-6 m-2">
             if !round.Scheduled() {
-                <span class="mx-auto" data-uk-toggle={fmt.Sprintf("#record-game-form-%v", round.ID)}>
+                <span class="mx-auto col-span-3 p-1" data-uk-toggle={fmt.Sprintf("#record-game-form-%v", round.ID)}>
                     Record Game
                 </span>
                 
-                <span class="mx-auto"
+                <span class="mx-auto col-span-3 p-1"
                     hx-ext="multi-swap"
                     hx-swap={fmt.Sprintf("multi:#round-games-%v:beforeend,#round-controls-%v:outerHTML", round.ID, round.ID)} 
                     hx-post={fmt.Sprintf("/leegs/%v/rounds/%v/games", round.LeegID, round.ID)}
                 >
                     Request Game
                 </span>
+            } else if round.Complete(){
+                <span class="mx-auto col-span-6">
+                    Round Complete
+                </span>
             } else {
-                <span class="mx-auto">
+                <span class="mx-auto col-span-6">
                     Round Scheduled
                 </span>
             }
         </span>
-        @forms.RecordGameForm(round.LeegID, round.ID, round.AllTeams, "","",map[string]string{}, true, false)
+        @forms.RecordGameForm(round.LeegID, round.ID, round.SortedTeams(), "","",map[string]string{}, true, false)
     </span>
 }
 

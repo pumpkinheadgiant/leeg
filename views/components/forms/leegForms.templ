@@ -32,7 +32,7 @@ templ TeamForm(values model.TeamUpdateRequest, errors map[string]string, hidden 
 
 templ RecordGameForm(leegID string, roundID string, teams model.EntityRefList, teamA string, teamB string, errors map[string]string, hidden bool, outOfBand bool) {
     <form id={fmt.Sprintf("record-game-form-%v", roundID)}
-            class="min-w-[210px] mx-auto m-2 bg-white border rounded-sm border-black grid grid-cols-6"
+            class="min-w-[210px] mx-auto m-2 bg-white border rounded-sm border-black grid grid-cols-8"
             hx-post={fmt.Sprintf("/leegs/%v/rounds/%v/games", leegID, roundID)}
             hx-target-4**={fmt.Sprintf("#record-game-form-%v", roundID)}
             hx-ext="multi-swap response-targets"
@@ -42,6 +42,7 @@ templ RecordGameForm(leegID string, roundID string, teams model.EntityRefList, t
                 hx-swap-oob="true"
             } 
     >
+        <input type="radio" name="winner" value="teamA" class="col-span-1">
         <select name="teamA" class="col-span-3">
             for _, team := range teams {
                 <option value={team.ID} selected?={ teamA == team.ID }>
@@ -49,6 +50,7 @@ templ RecordGameForm(leegID string, roundID string, teams model.EntityRefList, t
                 </option>
             }
         </select>
+        <input type="radio" name="winner" value="teamB" class="col-span-1">
         <select name="teamB" class="col-span-3">
             for _, team := range teams {
                 <option value={team.ID} selected?={team.ID == teamA && teamA != ""}>
@@ -57,11 +59,11 @@ templ RecordGameForm(leegID string, roundID string, teams model.EntityRefList, t
             }
         </select>
         if errors["teamB"] != "" {
-           <span class="text-red-500 text-xs col-span-6">
+           <span class="text-red-500 text-xs col-span-8 mx-auto">
                 { errors["teamB"]}
             </span>
         }
-        <button>go</button>
+        <button class="col-span-8 mx-auto">go</button>
     </form>
 }
 
