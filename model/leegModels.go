@@ -2,7 +2,6 @@ package model
 
 import (
 	"fmt"
-	"log/slog"
 	"sort"
 	"strings"
 )
@@ -17,6 +16,7 @@ type Leeg struct {
 	MatchupMap     MatchupMap    `json:"matchupMap"`
 	ActiveRound    EntityRef     `json:"activeRound"`
 	Scheduled      bool          `json:"scheduled"`
+	RecordsMap     RecordsMap    `json:"recordsMap"`
 }
 
 func (l Leeg) AsRef() EntityRef {
@@ -27,8 +27,22 @@ func (l Leeg) TotalRounds() int {
 	return len(l.Rounds)
 }
 
+type Record struct {
+	Wins   int `json:"wins"`
+	Losses int `json:"losses"`
+}
+
+type RecordsMap map[string]Record
+
+func (r *RecordsMap) Reset() {
+	for k := range *r {
+		delete(*r, k)
+	}
+}
+
 func (l Leeg) TeamList() EntityRefList {
 	allTeams := EntityRefList{}
+
 	for _, team := range l.TeamsMap {
 		allTeams = append(allTeams, team.AsRef())
 	}
@@ -56,25 +70,27 @@ func (l Leeg) GetRankedTeamsList() EntityRefList {
 		Key   string
 		Value Team
 	}
-	var ss []kv
+	var kvs []kv
 	for k, v := range l.TeamsMap {
-		ss = append(ss, kv{Key: k, Value: v})
+		kvs = append(kvs, kv{Key: k, Value: v})
 	}
 
-	sort.Slice(ss, func(i, j int) bool {
-		teamA := ss[i].Value
-		teamB := ss[j].Value
-		if teamA.Wins == teamB.Wins {
-			if teamA.Losses == teamB.Losses {
+	sort.Slice(kvs, func(i, j int) bool {
+		teamA := kvs[i].Value
+		teamB := kvs[j].Value
+		teamARecord := l.RecordsMap[teamA.ID]
+		teamBRecord := l.RecordsMap[teamB.ID]
+		if teamARecord.Wins == teamBRecord.Wins {
+			if teamARecord.Losses == teamBRecord.Losses {
 				return teamA.Name < teamB.Name
 			} else {
-				return teamA.Losses < teamB.Losses
+				return teamARecord.Losses < teamBRecord.Losses
 			}
 		}
-		return teamA.Wins > teamB.Wins
+		return teamARecord.Wins > teamBRecord.Wins
 	})
 
-	for _, team := range ss {
+	for _, team := range kvs {
 		teamsList = append(teamsList, team.Value.AsRef())
 	}
 
@@ -109,19 +125,6 @@ func (t TeamsMap) AsList() []Team {
 	return teamList
 }
 
-func (t *TeamsMap) RemoveVictoryFromTeamRecords(winner string, loser string) {
-	for id, team := range *t {
-		if team.ID == winner {
-			team.Wins--
-			(*t)[id] = team
-		} else if team.ID == loser {
-			team.Losses--
-			(*t)[id] = team
-		}
-	}
-	slog.Info("totally")
-}
-
 func (t *TeamsMap) RenameTeam(teamID string, name string) (Team, error) {
 	var updatedTeam Team
 	for _, existingTeam := range *t {
@@ -129,7 +132,6 @@ func (t *TeamsMap) RenameTeam(teamID string, name string) (Team, error) {
 			existingTeam.Name = name
 			(*t)[teamID] = existingTeam
 			updatedTeam = existingTeam
-
 			break
 		}
 	}
@@ -144,8 +146,6 @@ type Team struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
 	ImageURL string `json:"imageURL"`
-	Wins     int    `json:"wins"`
-	Losses   int    `json:"losses"`
 }
 
 func (t Team) AsRef() EntityRef {
@@ -173,14 +173,42 @@ type Round struct {
 	LeegID        string        `json:"leegID"`
 	RoundNumber   int           `json:"roundNumber"`
 	Games         EntityRefList `json:"games"`
+	Wins          int           `json:"wins"`
 	IsActive      bool          `json:"isActive"`
 	GamesPerRound int           `json:"gamesPerRound"`
 	AllTeams      EntityRefList `json:"allTeams"`
 	UnplayedTeams EntityRefList `json:"unplayedTeams"`
 }
 
+func (r Round) SortedTeams() EntityRefList {
+
+	type kv struct {
+		Key   string
+		Value EntityRef
+	}
+
+	var kvs []kv
+	for _, v := range r.AllTeams {
+		kvs = append(kvs, kv{Key: v.Text, Value: v})
+	}
+
+	sort.Slice(kvs, func(i, j int) bool {
+		return kvs[i].Value.Text < kvs[j].Value.Text
+	})
+	sortedTeams := EntityRefList{}
+
+	for _, team := range kvs {
+		sortedTeams = append(sortedTeams, team.Value)
+	}
+	return sortedTeams
+}
+
 func (r Round) Scheduled() bool {
 	return len(r.Games) == r.GamesPerRound
+}
+
+func (r Round) Complete() bool {
+	return r.Scheduled() && r.Wins == r.GamesPerRound
 }
 
 func (r Round) AsRef() EntityRef {

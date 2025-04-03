@@ -37,7 +37,7 @@ func (t TeamHandler) HandleTeamUpdate(w http.ResponseWriter, r *http.Request) er
 		return Render(w, r.WithContext(ctx), forms.TeamForm(teamRequest, errors, false, false))
 	}
 
-	team, games, activeRound, nameAvailable, err := t.service.RenameTeam(teamRequest)
+	team, record, games, activeRound, nameAvailable, err := t.service.RenameTeam(teamRequest)
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (t TeamHandler) HandleTeamUpdate(w http.ResponseWriter, r *http.Request) er
 		errors := map[string]string{"name": "name is in use"}
 		return Render(w, r.WithContext(ctx), forms.TeamForm(teamRequest, errors, false, false))
 	}
-	err = Render(w, r.WithContext(ctx), components.Team(team, false))
+	err = Render(w, r.WithContext(ctx), components.Team(team, record, false))
 	if err != nil {
 		return err
 	}

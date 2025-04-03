@@ -9,7 +9,7 @@ import (
 templ LeegPage(leeg model.Leeg){
     @Base() {
         @LeegHeader(leeg)
-        @LeegTeams(leeg.TeamsMap, leeg.GetRankedTeamsList())
+        @LeegTeams(leeg.TeamsMap, leeg.GetRankedTeamsList(), leeg.RecordsMap)
         @LeegRounds(leeg.Rounds)
     }
 }
@@ -23,20 +23,20 @@ templ LeegHeader(leeg model.Leeg) {
     </span>
 }
 
-templ LeegTeams(teams map[string]model.Team, rankedTeams model.EntityRefList) {
+templ LeegTeams(teams map[string]model.Team, rankedTeams model.EntityRefList, recordsMap model.RecordsMap) {
     <span class="w-full flex flex-row">
         <span class="w-full flex flex-col pt-3 items-center">
             <ul class="w-full pl-4 pr-4">
 
                 for _, rankedTeam := range rankedTeams {
-                    @components.Team(teams[rankedTeam.ID], false)
+                    @components.Team(teams[rankedTeam.ID], recordsMap[rankedTeam.ID], false)
                 }
             </ul>
             <span class="flex flex-row align-center items-center">
                 <span class="mx-auto w-[200px] uk-button uk-button-default"
                         hx-put={fmt.Sprintf("/leegs/{leegID}/sort")}
                         hx-target={fmt.Sprintf("")}
-                        >
+                >
                     Sort
                 </span>
             </span>
