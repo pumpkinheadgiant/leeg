@@ -41,5 +41,9 @@ templ LeegLink(leeg model.EntityRef) {
         <a href={templ.URL(fmt.Sprintf("/leegs/%v", leeg.ID))}>
             {leeg.Text} 
         </a>
+
+        <a hx-post={fmt.Sprintf("/leegs/%v", leeg.ID)} class="italic">
+            copy as new
+        </a>
     </li>
 }

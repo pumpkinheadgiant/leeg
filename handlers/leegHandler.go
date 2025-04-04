@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -29,6 +30,23 @@ func (l LeegHandler) HandleGetLeeg(w http.ResponseWriter, r *http.Request) error
 	ctx := context.WithValue(r.Context(), model.NavContextKey{}, nav)
 
 	return Render(w, r.WithContext(ctx), pages.LeegPage(leeg))
+}
+
+func (l LeegHandler) HandleCopyLeeg(w http.ResponseWriter, r *http.Request) error {
+	leegID := r.PathValue("leegID")
+	if leegID == "" {
+		w.WriteHeader(http.StatusNotFound)
+		return hxRedirect(w, r, "/")
+	}
+
+	newLeeg, err := l.service.CopyLeeg(leegID)
+	if err != nil {
+		return err
+	}
+	nav := model.Nav{LeegID: leegID}
+	ctx := context.WithValue(r.Context(), model.NavContextKey{}, nav)
+	return hxRedirect(w, r.WithContext(ctx), fmt.Sprintf("/leegs/%v", newLeeg.ID))
+
 }
 
 func (l LeegHandler) HandlePostLeeg(w http.ResponseWriter, r *http.Request) error {

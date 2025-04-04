@@ -13,6 +13,7 @@ type LeegServices struct {
 }
 
 type LeegService interface {
+	CopyLeeg(leegID string) (model.Leeg, error)
 	CreateLeeg(request model.LeegCreateRequest) (model.EntityRef, error)
 	CreateRandomGame(leegID string, roundID string) (model.Round, model.Game, error)
 	GetGame(leegID string, roundID string, gameID string) (model.Game, model.EntityRefList, error)
