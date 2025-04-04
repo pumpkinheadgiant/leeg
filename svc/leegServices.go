@@ -698,7 +698,7 @@ func (b LeegServices) GetLeeg(leegID string) (model.Leeg, error) {
 
 func (b LeegServices) GetLeegs() ([]model.EntityRef, error) {
 	var leegs []model.EntityRef
-	return leegs, b.Db.Update(func(tx *bbolt.Tx) error {
+	return leegs, b.Db.View(func(tx *bbolt.Tx) error {
 
 		leegsBucket := tx.Bucket([]byte(LeegsBucketKey))
 		if leegsBucket == nil {
