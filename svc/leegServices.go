@@ -588,11 +588,6 @@ func (b LeegServices) GetRound(leegID string, roundID string) (model.Round, map[
 	})
 }
 
-func wipeSHit(bucket *bbolt.Bucket) error {
-	err := bucket.DeleteBucket([]byte("1948edf2-4acd-4a42-8008-d5002317cab9"))
-	return err
-}
-
 func (b LeegServices) CopyLeeg(leegID string) (model.Leeg, error) {
 	var newLeeg model.Leeg
 	return newLeeg, b.Db.Update(func(tx *bbolt.Tx) error {
