@@ -117,7 +117,7 @@ func (l LeegServices) GetGame(leegID string, roundID string, gameID string) (mod
 	})
 }
 
-func (l LeegServices) RematchGame(leegID string, roundID string, gameID string, teamA string, teamB string) (model.Game, model.RecordsMap, []model.Team, []model.Team, error) {
+func (l LeegServices) RematchGame(leegID string, roundID string, gameID string, teamAID string, teamBID string) (model.Game, model.RecordsMap, []model.Team, []model.Team, error) {
 	var game model.Game
 	var modifiedTeams []model.Team
 	var allTeams []model.Team
@@ -137,8 +137,9 @@ func (l LeegServices) RematchGame(leegID string, roundID string, gameID string, 
 		if err != nil {
 			return err
 		}
-		teamAUpdated := teamA != existingGame.TeamA.ID
-		teamBUpdated := teamB != existingGame.TeamB.ID
+
+		teamAUpdated := !existingGame.Includes(teamAID)
+		teamBUpdated := !existingGame.Includes(teamBID)
 
 		if !teamAUpdated && !teamBUpdated {
 			// no-op, so just return the existing game and no teams need to be updated
@@ -162,9 +163,9 @@ func (l LeegServices) RematchGame(leegID string, roundID string, gameID string, 
 			round.Wins--
 		}
 
-		newTeamA := leeg.TeamsMap[teamA].AsRef()
+		newTeamA := leeg.TeamsMap[teamAID].AsRef()
 		existingGame.TeamA = newTeamA
-		newTeamB := leeg.TeamsMap[teamB].AsRef()
+		newTeamB := leeg.TeamsMap[teamBID].AsRef()
 		existingGame.TeamB = newTeamB
 
 		round.Games = round.Games.Update(existingGame.AsRef())

@@ -233,6 +233,10 @@ func (g Game) GetWinner() EntityRef {
 	return g.Winner
 }
 
+func (g Game) Includes(teamID string) bool {
+	return g.TeamA.ID == teamID || g.TeamB.ID == teamID
+}
+
 func (g Game) GetLoser() EntityRef {
 	if g.TeamA.ID == g.Winner.ID {
 		return g.TeamB
