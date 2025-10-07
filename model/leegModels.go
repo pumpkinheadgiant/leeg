@@ -7,16 +7,17 @@ import (
 )
 
 type Leeg struct {
-	ID             string        `json:"id"`
-	Name           string        `json:"name"`
-	TeamDescriptor string        `json:"teamDescriptor"`
-	TeamsMap       TeamsMap      `json:"teams"`
-	Rounds         EntityRefList `json:"rounds"`
-	ImageURL       string        `json:"imageURL"`
-	MatchupMap     MatchupMap    `json:"matchupMap"`
-	ActiveRound    EntityRef     `json:"activeRound"`
-	Scheduled      bool          `json:"scheduled"`
-	RecordsMap     RecordsMap    `json:"recordsMap"`
+	ID                  string        `json:"id"`
+	Name                string        `json:"name"`
+	TeamDescriptor      string        `json:"teamDescriptor"`
+	TeamsMap            TeamsMap      `json:"teams"`
+	Rounds              EntityRefList `json:"rounds"`
+	ImageURL            string        `json:"imageURL"`
+	MatchupMap          MatchupMap    `json:"matchupMap"`
+	ActiveRound         EntityRef     `json:"activeRound"`
+	Scheduled           bool          `json:"scheduled"`
+	RecordsMap          RecordsMap    `json:"recordsMap"`
+	TotalGamesScheduled int           `json:"totalGamesScheduled"`
 }
 
 func (l Leeg) AsRef() EntityRef {
