@@ -14,6 +14,17 @@ type LeegDAO struct {
 	GamesBucket  *bbolt.Bucket
 }
 
+func (l LeegDAO) getActiveRoundNumber() int {
+	var gamesScheduled = l.Leeg.TotalGamesScheduled
+	var teamsCount = len(l.Leeg.TeamsMap)
+	if teamsCount < 1 {
+		return -1
+	}
+	gamesPerRound := (teamsCount / 2)
+	activeRoundNumber := (gamesScheduled / gamesPerRound) + 1
+	return activeRoundNumber
+}
+
 func (l LeegDAO) updateGamesForRenamedTeam(teamRef model.EntityRef) ([]model.Game, error) {
 
 	var updatedGames = []model.Game{}
@@ -49,6 +60,7 @@ func (l LeegDAO) updateGamesForRenamedTeam(teamRef model.EntityRef) ([]model.Gam
 	}
 	return updatedGames, nil
 }
+
 func (l LeegDAO) saveGame(game model.Game) error {
 	gameBytes, err := json.Marshal(game)
 	if err != nil {
